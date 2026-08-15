@@ -6,7 +6,12 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import sys
 import tarfile
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+if str(REPOSITORY_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPOSITORY_ROOT))
 
 from lib.release_bundle import load_release_bundle
 
