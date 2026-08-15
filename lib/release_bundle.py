@@ -38,6 +38,7 @@ class CabinetRelease:
     source_sha: str
     artifact_url: str
     artifact_sha256: str
+    repository: str | None = None
 
 
 @dataclass(frozen=True)
@@ -135,8 +136,11 @@ def verify_repository_head(repository: str | Path, expected_sha: str) -> None:
 
 
 def release_bundle_identity(bundle: ReleaseBundle) -> str:
+    identity_payload = asdict(bundle)
+    if bundle.cabinet.repository is None:
+        del identity_payload["cabinet"]["repository"]
     canonical_bundle = json.dumps(
-        asdict(bundle),
+        identity_payload,
         sort_keys=True,
         separators=(",", ":"),
     ).encode("utf-8")
@@ -236,6 +240,29 @@ def _validate_image(value: object, field: str) -> None:
         raise ReleaseBundleError(f"{field} must be pinned by sha256 digest")
 
 
+def _validate_public_https_repository(value: object, field: str) -> None:
+    if not isinstance(value, str):
+        raise ReleaseBundleError(f"{field} must be a public GitHub HTTPS URL")
+    try:
+        repository_url = urlsplit(value)
+        port = repository_url.port
+    except ValueError as error:
+        raise ReleaseBundleError(f"{field} must be a public GitHub HTTPS URL") from error
+    if (
+        value != value.strip()
+        or any(character.isspace() for character in value)
+        or repository_url.scheme != "https"
+        or repository_url.hostname != "github.com"
+        or not repository_url.path.strip("/")
+        or repository_url.username is not None
+        or repository_url.password is not None
+        or repository_url.query
+        or repository_url.fragment
+        or port not in (None, 443)
+    ):
+        raise ReleaseBundleError(f"{field} must be a public GitHub HTTPS URL")
+
+
 def _backend_contract_pair(manifest: dict[str, object]) -> BackendContractPair:
     bot = manifest["bot"]
     cabinet = manifest["cabinet"]
@@ -249,7 +276,7 @@ def _backend_contract_pair(manifest: dict[str, object]) -> BackendContractPair:
 
 
 def _validate_manifest(manifest: dict[str, object], supported_configuration_schema: int) -> None:
-    if manifest["schema_version"] != 1:
+    if manifest["schema_version"] not in (1, 2):
         raise ReleaseBundleError("unsupported manifest schema_version")
     if not isinstance(manifest["configuration_schema"], int):
         raise ReleaseBundleError("configuration_schema must be an integer")
@@ -262,6 +289,14 @@ def _validate_manifest(manifest: dict[str, object], supported_configuration_sche
     if not isinstance(bot, dict) or not isinstance(cabinet, dict) or not isinstance(images, dict):
         raise ReleaseBundleError("bot, cabinet and images must be objects")
     _validate_sha(bot.get("sha"), "bot.sha", 40)
+    has_cabinet_repository = "repository" in cabinet
+    cabinet_repository = cabinet.get("repository")
+    if manifest["schema_version"] == 1 and has_cabinet_repository:
+        raise ReleaseBundleError("schema_version 1 must not define cabinet.repository")
+    if manifest["schema_version"] == 2 and not has_cabinet_repository:
+        raise ReleaseBundleError("schema_version 2 requires cabinet.repository")
+    if has_cabinet_repository:
+        _validate_public_https_repository(cabinet_repository, "cabinet.repository")
     _validate_sha(cabinet.get("source_sha"), "cabinet.source_sha", 40)
     _validate_sha(cabinet.get("artifact_sha256"), "cabinet.artifact_sha256", 64)
     artifact_url = cabinet.get("artifact_url")
@@ -305,6 +340,7 @@ def load_release_bundle(
                 source_sha=manifest["cabinet"]["source_sha"],
                 artifact_url=manifest["cabinet"]["artifact_url"],
                 artifact_sha256=manifest["cabinet"]["artifact_sha256"],
+                repository=manifest["cabinet"].get("repository"),
             ),
             images=ImageReleases(**manifest["images"]),
             backend_contract=manifest["backend_contract"],

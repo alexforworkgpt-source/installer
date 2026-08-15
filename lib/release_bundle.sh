@@ -50,6 +50,7 @@ prepare_release_bundle() {
   local manifest_file="${work_dir}/release.json"
   local bundle_json
   local manifest_bot_repo
+  local manifest_cabinet_repo
   local migration_policy
 
   command_exists jq || {
@@ -68,6 +69,11 @@ prepare_release_bundle() {
   PREPARED_RELEASE="$(jq -r '.release' <<<"${bundle_json}")"
   PREPARED_BUNDLE_IDENTITY="$(jq -r '.identity' <<<"${bundle_json}")"
   manifest_bot_repo="$(jq -r '.bot.repository' <<<"${bundle_json}")"
+  manifest_cabinet_repo="$(jq -r '.cabinet.repository' <<<"${bundle_json}")"
+  if [[ -z "${manifest_cabinet_repo}" || "${manifest_cabinet_repo}" == null ]]; then
+    manifest_cabinet_repo="${LEGACY_CABINET_REPO_URL}"
+  fi
+  PREPARED_CABINET_REPO_URL="${manifest_cabinet_repo}"
   PREPARED_BOT_SHA="$(jq -r '.bot.sha' <<<"${bundle_json}")"
   PREPARED_CABINET_SHA="$(jq -r '.cabinet.source_sha' <<<"${bundle_json}")"
   PREPARED_CABINET_ARTIFACT_URL="$(jq -r '.cabinet.artifact_url' <<<"${bundle_json}")"
@@ -89,7 +95,7 @@ prepare_release_bundle() {
     log_error "Bot SHA из Release Bundle не найден в repository."
     return 1
   }
-  PREPARED_CABINET_SHA="$(resolve_release_source_sha "${CABINET_REPO_URL}" "${PREPARED_CABINET_SHA}")" || {
+  PREPARED_CABINET_SHA="$(resolve_release_source_sha "${manifest_cabinet_repo}" "${PREPARED_CABINET_SHA}")" || {
     log_error "Cabinet SHA из Release Bundle не найден в repository."
     return 1
   }

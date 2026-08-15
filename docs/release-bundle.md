@@ -13,7 +13,7 @@ images. Manifest публикуется release pipeline installer вместе 
 - версия схемы manifest
 - публичное имя release
 - repository и точный 40-символьный Git SHA Bot
-- точный 40-символьный source SHA Cabinet
+- публичный GitHub HTTPS repository и точный 40-символьный source SHA Cabinet
 - HTTPS URL готового `cabinet-dist.tar.gz`
 - SHA-256 Cabinet artifact
 - PostgreSQL и Redis images, закреплённые через `@sha256`
@@ -23,6 +23,9 @@ images. Manifest публикуется release pipeline installer вместе 
 
 Актуальный формат показан в `releases/release.example.json`. Это только пример с
 нерабочими значениями, его нельзя применять как release.
+Schema v2 требует `cabinet.repository`; прежняя schema v1 читается только без
+этого поля. Поэтому старый Installer безопасно отклоняет новый контракт, а новый
+Installer сохраняет совместимость с неизменяемыми legacy Bundle.
 
 ## Cabinet artifact
 
@@ -42,8 +45,8 @@ Artifact собирается tenant-neutral: `VITE_API_URL=/api`, Telegram widg
 Publication pipeline находится в
 `.github/workflows/publish-release-bundle.yml`. Он разрешает refs в SHA, собирает
 Cabinet, создаёт deterministic archive и manifest через production parser,
-публикует draft release, скачивает assets обратно, проверяет checksums и только
-после этого публикует release. Реальный опубликованный Bundle и VPS smoke должны
+публикует draft release, скачивает assets обратно, сравнивает manifest и provenance,
+проверяет их структуру и checksums и только после этого публикует release. Реальный опубликованный Bundle и VPS smoke должны
 быть зафиксированы отдельно; наличие workflow само по себе не является таким proof.
 Node builder и Nginx runtime для сборки artifact задаются только immutable image
 digests; pipeline выполняет две сборки и сравнивает архивы byte-for-byte, а точные
@@ -95,8 +98,12 @@ mutation проверит compatibility metadata, наличие обоих Git 
 совпасть с SHA из manifest. Затем installer покажет release summary и запросит
 подтверждение.
 
-После commit в private state сохраняются deterministic Release Bundle identity и
-точный Cabinet artifact SHA-256. Предыдущие identities сохраняются для аудита.
+После commit в private state сохраняются Cabinet repository, deterministic
+Release Bundle identity и точный Cabinet artifact SHA-256. При смене repository
+Git origin и state переключаются внутри Protected Update; rollback возвращает
+предыдущие repository, Git HEAD, artifact и identities. Предыдущие identities сохраняются для аудита.
+Manifest, опубликованные до появления `cabinet.repository`, используют точный
+исторический Upstream Cabinet на fresh install и текущий persisted repository при update.
 Автоматический rollback во время текущего update использует временно защищённую
 точную копию предыдущего Cabinet dist; отдельный поздний rollback по identity пока
 не предоставляется.

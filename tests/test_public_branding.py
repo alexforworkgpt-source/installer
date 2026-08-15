@@ -12,6 +12,8 @@ UPSTREAM_BOT_URL = (
     "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git"
 )
 UPSTREAM_CABINET_URL = "https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git"
+CUSTOM_CABINET_URL = "https://github.com/alexforworkgpt-source/custom-cabinet.git"
+CUSTOM_CABINET_SHA = "49d4bbaf2b87244f8080d65cc404ad5ef78d2dea"
 ALLOWED_TECHNICAL_FRAGMENTS_BY_FILE = {
     ".github/workflows/publish-release-bundle.yml": (
         UPSTREAM_BOT_URL,
@@ -94,6 +96,29 @@ class PublicBrandingTests(unittest.TestCase):
         )
         for url in expected:
             self.assertIn(url, combined)
+
+    def test_custom_cabinet_is_the_default_source(self) -> None:
+        workflow = (
+            ROOT / ".github" / "workflows" / "publish-release-bundle.yml"
+        ).read_text(encoding="utf-8")
+        common = (ROOT / "lib" / "common.sh").read_text(encoding="utf-8")
+        attribution = (ROOT / "docs" / "technical-attribution.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(f"default: {CUSTOM_CABINET_URL}", workflow)
+        self.assertIn(f"default: {CUSTOM_CABINET_SHA}", workflow)
+        self.assertIn(
+            "diff release-assets/release-provenance.json downloaded-assets/release-provenance.json",
+            workflow,
+        )
+        self.assertIn("downloaded-assets/release-provenance.json", workflow)
+        self.assertIn(f'DEFAULT_CABINET_REPO_URL="{CUSTOM_CABINET_URL}"', common)
+        self.assertIn(
+            f'LEGACY_CABINET_REPO_URL="{UPSTREAM_CABINET_URL}"',
+            common,
+        )
+        self.assertIn(CUSTOM_CABINET_URL, attribution)
 
     def test_scratch_history_is_excluded_from_release_archives(self) -> None:
         result = subprocess.run(

@@ -168,7 +168,7 @@ process arguments; context удаляется после committed/rolled-back �
 
 - основной production-сценарий: `Обновления -> Обновить всё из Release Bundle`
 - manifest можно получить по HTTPS или указать локальным абсолютным путём
-- Release Bundle фиксирует совместимые Bot SHA, Cabinet SHA, Cabinet artifact и Docker image digests
+- Release Bundle фиксирует совместимые Bot SHA, Cabinet repository и SHA, Cabinet artifact и Docker image digests
 - Cabinet artifact проверяется по SHA-256 до изменения runtime
 - перед dump Bot останавливается, чтобы после snapshot в PostgreSQL не появились
   новые записи, которые rollback не сможет сохранить
@@ -176,7 +176,7 @@ process arguments; context удаляется после committed/rolled-back �
 - installer записывает Alembic revision до и после успешного update
 - dump и metadata сохраняются в `state/backups/database/`
 - compatible rollback текущего bundle-managed update останавливает Bot,
-  возвращает защищённые перед update commits/images/Cabinet dist, восстанавливает
+  возвращает защищённые перед update repository/commits/images/Cabinet dist, восстанавливает
   dump и исходную Alembic revision, и только затем запускает Bot
 - при ошибке `forward-only` release старый Bot автоматически не запускается
   против новой schema; стек получает `safely stopped` и точный recovery plan
@@ -203,7 +203,7 @@ Cabinet собирается на runner GitHub, а не на локальном
 
 - создать и отправить новый installer tag, указывающий на проверенный commit;
 - выбрать точный 40-символьный Git SHA Bot;
-- выбрать публичный репозиторий Cabinet и точный 40-символьный Git SHA;
+- выбрать публичный GitHub-репозиторий Cabinet и точный 40-символьный Git SHA;
 - разрешить PostgreSQL, Redis, Node builder и Nginx runtime только в identities
   вида `image@sha256:<64 hex>`;
 - выбрать release name, например `2026.08.3`, и соответствующий installer tag,
@@ -227,7 +227,7 @@ Actions -> Publish Release Bundle -> Run workflow
 | `release` | Публичное имя версии без `v` |
 | `installer_tag` | Уже существующий неизменяемый tag installer |
 | `bot_ref` | Точный SHA Bot |
-| `cabinet_repository` | Upstream Cabinet или публичный Custom Cabinet |
+| `cabinet_repository` | Default публичный Custom Cabinet; менять только осознанно |
 | `cabinet_ref` | Точный SHA Cabinet |
 | `postgres_image` | PostgreSQL image с `@sha256` |
 | `redis_image` | Redis image с `@sha256` |
@@ -246,7 +246,7 @@ Workflow должен успешно выполнить все этапы:
 4. дважды собрать Cabinet и сравнить результаты byte-for-byte;
 5. создать и проверить manifest;
 6. создать draft Release и загрузить assets;
-7. скачать draft-assets обратно и проверить checksums;
+7. скачать draft-assets обратно, сравнить manifest/provenance и проверить checksums;
 8. только после этого сделать Release публичным.
 
 Draft не считается готовым результатом. При падении workflow найдите первый

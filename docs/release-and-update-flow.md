@@ -83,25 +83,30 @@ workflow. После публикации VPS скачивает необход�
 1. Maintainer выбирает точные SHA новых Bot и Cabinet.
 2. GitHub Actions создаёт новый Release Bundle и собирает Cabinet.
 3. Installer на VPS скачивает новый manifest и Cabinet artifact.
-4. До изменения runtime проверяются manifest, SHA, digests и checksum.
+4. До изменения runtime проверяются manifest, repositories, SHA, digests и checksum.
 5. Installer делает защищённый PostgreSQL dump и сохраняет прежнее состояние.
 6. Bot и Cabinet обновляются как одна совместимая группа.
 7. При успешных health checks изменение фиксируется.
-8. При обратимой ошибке installer возвращает предыдущие Bot, Cabinet и базу
+8. При обратимой ошибке installer возвращает предыдущие Bot, Cabinet repository и базу
    данных. Если безопасность отката доказать нельзя, Bot остаётся остановленным
    с recovery plan.
+
+При смене Cabinet source repository Installer показывает новый HTTPS URL перед
+подтверждением. Commit атомарно сохраняет новый URL, а rollback возвращает
+предыдущие URL, Git origin, SHA и Cabinet artifact.
 
 Поэтому выход новой upstream-версии не меняет VPS автоматически. Сначала
 владелец installer осознанно выпускает новый Bundle с подтверждёнными версиями.
 
 ## Custom Cabinet
 
-Для постоянной кастомизации используйте собственный публичный Custom Cabinet:
+Default source для новых сборок уже настроен на публичный Custom Cabinet:
+<https://github.com/alexforworkgpt-source/custom-cabinet.git>.
 
-1. Создайте репозиторий Custom Cabinet из явно выбранной версии Upstream Cabinet.
+1. Переносите изменения из явно выбранной версии Upstream Cabinet отдельным commit.
 2. Храните branding и изменения в Custom Cabinet, а не в готовых файлах на VPS.
-3. При публикации Bundle укажите его URL в `cabinet_repository` и точный commit
-   в `cabinet_ref`.
+3. При публикации Bundle оставьте default `cabinet_repository` и укажите точный
+   Custom Cabinet commit в `cabinet_ref`.
 4. GitHub Actions соберёт артефакт из вашего fork.
 5. VPS установит вашу сборку из Release `installer`.
 6. Для следующего обновления перенесите нужные upstream-изменения в Custom Cabinet и
@@ -109,8 +114,7 @@ workflow. После публикации VPS скачивает необход�
 
 Ручное редактирование `runtime/cabinet-dist` на VPS не является устойчивой
 кастомизацией: следующее production-обновление заменит этот каталог проверенным
-артефактом. Текущий workflow клонирует Cabinet без отдельного токена, поэтому
-для приватного fork потребуется отдельно добавить безопасную авторизацию.
+артефактом. Custom Cabinet публичен, поэтому workflow клонирует его без токена.
 
 ## Что находится в Release installer
 

@@ -82,6 +82,7 @@ def create_release_manifest(
     installer_tag: str,
     bot_repository: str,
     bot_sha: str,
+    cabinet_repository: str,
     cabinet_sha: str,
     artifact_sha256: str,
     postgres_image: str,
@@ -100,7 +101,7 @@ def create_release_manifest(
         f"{installer_tag}/cabinet-dist.tar.gz"
     )
     manifest = {
-        "schema_version": 1,
+        "schema_version": 2,
         "release": release,
         "bot": {
             "repository": bot_repository,
@@ -108,6 +109,7 @@ def create_release_manifest(
             "backend_contract": "1",
         },
         "cabinet": {
+            "repository": cabinet_repository,
             "source_sha": cabinet_sha,
             "artifact_url": artifact_url,
             "artifact_sha256": artifact_sha256,
@@ -144,6 +146,7 @@ def main() -> int:
     manifest_parser.add_argument("--installer-tag", required=True)
     manifest_parser.add_argument("--bot-repository", required=True)
     manifest_parser.add_argument("--bot-sha", required=True)
+    manifest_parser.add_argument("--cabinet-repository", required=True)
     manifest_parser.add_argument("--cabinet-sha", required=True)
     manifest_parser.add_argument("--artifact-sha256", required=True)
     manifest_parser.add_argument("--postgres-image", required=True)
@@ -180,6 +183,7 @@ def main() -> int:
         installer_tag=args.installer_tag,
         bot_repository=args.bot_repository,
         bot_sha=args.bot_sha,
+        cabinet_repository=args.cabinet_repository,
         cabinet_sha=args.cabinet_sha,
         artifact_sha256=args.artifact_sha256,
         postgres_image=args.postgres_image,

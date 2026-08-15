@@ -499,6 +499,7 @@ full_install_once() {
   ensure_docker_compose_plugin || return 1
   prepare_fresh_install_release || return 1
   BOT_VERSION_REF="${PREPARED_BOT_SHA}"
+  CABINET_REPO_URL="${PREPARED_CABINET_REPO_URL}"
   CABINET_VERSION_REF="${PREPARED_CABINET_SHA}"
   POSTGRES_IMAGE="${PREPARED_POSTGRES_IMAGE}"
   REDIS_IMAGE="${PREPARED_REDIS_IMAGE}"

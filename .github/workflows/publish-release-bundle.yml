@@ -18,11 +18,12 @@ on:
       cabinet_repository:
         description: Public Cabinet Git repository
         required: true
-        default: https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git
+        default: https://github.com/alexforworkgpt-source/custom-cabinet.git
         type: string
       cabinet_ref:
         description: Cabinet tag, branch or SHA to resolve
         required: true
+        default: 49d4bbaf2b87244f8080d65cc404ad5ef78d2dea
         type: string
       postgres_image:
         description: PostgreSQL image pinned by sha256 digest
@@ -104,7 +105,7 @@ jobs:
               value != value.strip()
               or any(character.isspace() for character in value)
               or parts.scheme != "https"
-              or not parts.hostname
+              or parts.hostname != "github.com"
               or not parts.path.strip("/")
               or parts.username is not None
               or parts.password is not None
@@ -112,7 +113,7 @@ jobs:
               or parts.fragment
               or port not in (None, 443)
           ):
-              raise SystemExit("Cabinet repository must be a public HTTPS Git URL without credentials")
+              raise SystemExit("Cabinet repository must be a public GitHub HTTPS URL without credentials")
           PY
           test "${LIFECYCLE_SHA}" = "$(git rev-parse HEAD)"
           test "$(git rev-parse HEAD)" = "$(git rev-parse "refs/tags/${INSTALLER_TAG}^{commit}")"
@@ -206,6 +207,7 @@ jobs:
             --installer-tag "${INSTALLER_TAG}" \
             --bot-repository "${BOT_REPOSITORY}" \
             --bot-sha "${BOT_SHA}" \
+            --cabinet-repository "${CABINET_REPOSITORY}" \
             --cabinet-sha "${CABINET_SHA}" \
             --artifact-sha256 "${artifact_sha256}" \
             --postgres-image "${POSTGRES_IMAGE}" \
@@ -242,12 +244,26 @@ jobs:
       - name: Download and verify published draft assets
         env:
           GH_TOKEN: ${{ github.token }}
+          CABINET_SHA: ${{ steps.revisions.outputs.cabinet_sha }}
         shell: bash
         run: |
           set -Eeuo pipefail
           mkdir -p downloaded-assets
           gh release download "${INSTALLER_TAG}" --dir downloaded-assets
           diff release-assets/release.json downloaded-assets/release.json
+          diff release-assets/release-provenance.json downloaded-assets/release-provenance.json
+          jq -e \
+            --arg cabinet_repository "${CABINET_REPOSITORY}" \
+            --arg cabinet_sha "${CABINET_SHA}" \
+            --arg node_builder_image "${NODE_BUILDER_IMAGE}" \
+            --arg nginx_runtime_image "${NGINX_RUNTIME_IMAGE}" \
+            'type == "object"
+              and keys == ["cabinet_repository", "cabinet_sha", "nginx_runtime_image", "node_builder_image"]
+              and .cabinet_repository == $cabinet_repository
+              and .cabinet_sha == $cabinet_sha
+              and .node_builder_image == $node_builder_image
+              and .nginx_runtime_image == $nginx_runtime_image' \
+            downloaded-assets/release-provenance.json
           (cd downloaded-assets && sha256sum --check cabinet-dist.tar.gz.sha256)
           (cd downloaded-assets && \
             sha256sum --check "installer-${RELEASE_NAME}.tar.gz.sha256")

@@ -14,7 +14,8 @@ RECOVERY_RUNTIME_ADAPTER="${INSTALLER_DIR}/lib/recovery_runtime.sh"
 
 DEFAULT_PROJECT_ROOT="/opt/bot-stack"
 DEFAULT_BOT_REPO_URL="https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git"
-DEFAULT_CABINET_REPO_URL="https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git"
+DEFAULT_CABINET_REPO_URL="https://github.com/alexforworkgpt-source/custom-cabinet.git"
+LEGACY_CABINET_REPO_URL="https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git"
 DEFAULT_TIMEZONE="Europe/Moscow"
 DEFAULT_LANGUAGE="ru"
 DEFAULT_POSTGRES_DB="remnawave_bot"
@@ -2059,6 +2060,9 @@ clone_or_update_repo() {
 
   if [[ -d "${target_dir}/.git" ]]; then
     log_info "Обновление репозитория: ${target_dir}"
+    if [[ "$(git -C "${target_dir}" remote get-url origin)" != "${repo_url}" ]]; then
+      git -C "${target_dir}" remote set-url origin "${repo_url}"
+    fi
     git -C "${target_dir}" fetch --tags origin
   else
     log_info "Клонирование репозитория: ${repo_url}"

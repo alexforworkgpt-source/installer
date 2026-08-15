@@ -568,6 +568,7 @@ update_from_release_bundle_once() {
   local release
   local bundle_identity
   local manifest_bot_repo
+  local manifest_cabinet_repo
   local bot_sha
   local cabinet_sha
   local cabinet_artifact_url
@@ -588,6 +589,7 @@ update_from_release_bundle_once() {
   local previous_last_artifact_identity="${LAST_CABINET_ARTIFACT_SHA256:-}"
   local previous_last_bot_ref="${LAST_BOT_VERSION_REF:-}"
   local previous_last_cabinet_ref="${LAST_CABINET_VERSION_REF:-}"
+  local previous_cabinet_repository="${CABINET_REPO_URL}"
   local previous_cabinet_dir
   local protected_result_json=""
   local protected_result_status=0
@@ -624,6 +626,10 @@ update_from_release_bundle_once() {
   release="$(jq -r '.release' <<<"${bundle_json}")"
   bundle_identity="$(jq -r '.identity' <<<"${bundle_json}")"
   manifest_bot_repo="$(jq -r '.bot.repository' <<<"${bundle_json}")"
+  manifest_cabinet_repo="$(jq -r '.cabinet.repository' <<<"${bundle_json}")"
+  if [[ -z "${manifest_cabinet_repo}" || "${manifest_cabinet_repo}" == null ]]; then
+    manifest_cabinet_repo="${CABINET_REPO_URL}"
+  fi
   bot_sha="$(jq -r '.bot.sha' <<<"${bundle_json}")"
   cabinet_sha="$(jq -r '.cabinet.source_sha' <<<"${bundle_json}")"
   cabinet_artifact_url="$(jq -r '.cabinet.artifact_url' <<<"${bundle_json}")"
@@ -638,7 +644,7 @@ update_from_release_bundle_once() {
 
   bot_sha="$(resolve_release_source_sha "${manifest_bot_repo}" "${bot_sha}")" \
     || die "Bot SHA из Release Bundle не найден в repository. Runtime не изменён."
-  cabinet_sha="$(resolve_release_source_sha "${CABINET_REPO_URL}" "${cabinet_sha}")" \
+  cabinet_sha="$(resolve_release_source_sha "${manifest_cabinet_repo}" "${cabinet_sha}")" \
     || die "Cabinet SHA из Release Bundle не найден в repository. Runtime не изменён."
 
   archive_file="${work_dir}/cabinet-dist.tar.gz"
@@ -660,6 +666,7 @@ update_from_release_bundle_once() {
 
   echo "Release Bundle: ${release}"
   echo "Bot SHA:        ${bot_sha}"
+  echo "Cabinet repo:   ${manifest_cabinet_repo}"
   echo "Cabinet SHA:    ${cabinet_sha}"
   echo "PostgreSQL:     ${postgres_image}"
   echo "Redis:          ${redis_image}"
@@ -671,6 +678,8 @@ update_from_release_bundle_once() {
   write_protected_update_context_value "${work_dir}" target-release "${release}"
   write_protected_update_context_value "${work_dir}" target-bundle-identity "${bundle_identity}"
   write_protected_update_context_value "${work_dir}" target-bot-sha "${bot_sha}"
+  write_protected_update_context_value \
+    "${work_dir}" target-cabinet-repository "${manifest_cabinet_repo}"
   write_protected_update_context_value "${work_dir}" target-cabinet-sha "${cabinet_sha}"
   write_protected_update_context_value "${work_dir}" target-artifact-file "${archive_file}"
   write_protected_update_context_value "${work_dir}" target-artifact-sha256 "${cabinet_artifact_sha256}"
@@ -679,6 +688,8 @@ update_from_release_bundle_once() {
   write_protected_update_context_value "${work_dir}" target-manifest-source "${manifest_source}"
   write_protected_update_context_value "${work_dir}" migration-policy "${migration_policy}"
   write_protected_update_context_value "${work_dir}" previous-bot-sha "${previous_bot_sha}"
+  write_protected_update_context_value \
+    "${work_dir}" previous-cabinet-repository "${previous_cabinet_repository}"
   write_protected_update_context_value "${work_dir}" previous-cabinet-sha "${previous_cabinet_sha}"
   write_protected_update_context_value "${work_dir}" previous-postgres-image "${previous_postgres_image}"
   write_protected_update_context_value "${work_dir}" previous-redis-image "${previous_redis_image}"

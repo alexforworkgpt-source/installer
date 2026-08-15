@@ -36,13 +36,30 @@ create_repository() {
 }
 
 mapfile -t bot_repository < <(create_repository bot)
-mapfile -t cabinet_repository < <(create_repository cabinet)
+mapfile -t cabinet_repository < <(create_repository cabinet-current)
+mapfile -t target_cabinet_repository < <(create_repository cabinet-target)
 BOT_REPO_URL="${bot_repository[0]}"
 BOT_REPO_DIR="${bot_repository[1]}"
 CABINET_REPO_URL="${cabinet_repository[0]}"
+CABINET_TARGET_REPO_URL="https://github.com/OWNER/custom-cabinet.git"
 CABINET_REPO_DIR="${cabinet_repository[1]}"
 BOT_SHA="$(git -C "${BOT_REPO_DIR}" rev-parse HEAD)"
+CURRENT_CABINET_SHA="$(git -C "${cabinet_repository[0]}" rev-parse HEAD)"
+TARGET_CABINET_SHA="$(git -C "${target_cabinet_repository[0]}" rev-parse HEAD)"
 MISSING_CABINET_SHA="ffffffffffffffffffffffffffffffffffffffff"
+
+SWITCHED_REPOSITORY="${TEMP_ROOT}/switched-repository"
+git clone --quiet "${cabinet_repository[0]}" "${SWITCHED_REPOSITORY}"
+checkout_repo_ref \
+  "${SWITCHED_REPOSITORY}" "${target_cabinet_repository[0]}" "${TARGET_CABINET_SHA}"
+[[ "$(git -C "${SWITCHED_REPOSITORY}" rev-parse HEAD)" == "${TARGET_CABINET_SHA}" ]]
+[[ "$(git -C "${SWITCHED_REPOSITORY}" remote get-url origin)" == \
+  "$(git -C "${target_cabinet_repository[0]}" rev-parse --show-toplevel)" ]]
+checkout_repo_ref \
+  "${SWITCHED_REPOSITORY}" "${cabinet_repository[0]}" "${CURRENT_CABINET_SHA}"
+[[ "$(git -C "${SWITCHED_REPOSITORY}" rev-parse HEAD)" == "${CURRENT_CABINET_SHA}" ]]
+[[ "$(git -C "${SWITCHED_REPOSITORY}" remote get-url origin)" == \
+  "$(git -C "${cabinet_repository[0]}" rev-parse --show-toplevel)" ]]
 
 PROJECT_ROOT="${TEMP_ROOT}/project"
 STATE_DIR="${PROJECT_ROOT}/state"
@@ -70,7 +87,7 @@ write_manifest() {
 
   cat > "${MANIFEST_FILE}" <<EOF
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "release": "shell-test-release",
   "bot": {
     "repository": "${BOT_REPO_URL}",
@@ -78,6 +95,7 @@ write_manifest() {
     "backend_contract": "1"
   },
   "cabinet": {
+    "repository": "${CABINET_TARGET_REPO_URL}",
     "source_sha": "${cabinet_sha}",
     "artifact_url": "https://example.test/cabinet-dist.tar.gz",
     "artifact_sha256": "${artifact_sha256}",
@@ -115,7 +133,7 @@ import sys
 value = json.load(sys.stdin)
 for part in sys.argv[1].split("."):
     value = value[part]
-print(value)
+print("null" if value is None else value)
 ' "${query}"
 }
 copy_or_download_release_file() {
@@ -124,6 +142,16 @@ copy_or_download_release_file() {
     */release.json) cp "${MANIFEST_FILE}" "${destination}" ;;
     *) cp "${ARTIFACT_FILE}" "${destination}" ;;
   esac
+}
+resolve_release_source_sha() {
+  local repository="$1"
+  local requested_ref="$2"
+  if [[ "${repository}" == "${CABINET_TARGET_REPO_URL}" \
+    || "${repository}" == "${LEGACY_CABINET_REPO_URL}" ]]; then
+    repository="${target_cabinet_repository[0]}"
+  fi
+  run_python "${INSTALLER_DIR}/lib/release_bundle.py" resolve-ref \
+    "${repository}" "${requested_ref}"
 }
 create_verified_update_dump() {
   printf '%s\n' dump > "${TEMP_ROOT}/database.dump"
@@ -220,7 +248,6 @@ fi
 printf '%s\n' 'second bot release' > "${bot_repository[0]}/release.txt"
 git -C "${bot_repository[0]}" commit --quiet -am 'second bot release'
 TARGET_BOT_SHA="$(git -C "${bot_repository[0]}" rev-parse HEAD)"
-TARGET_CABINET_SHA="$(git -C "${cabinet_repository[0]}" rev-parse HEAD)"
 write_manifest "${TARGET_BOT_SHA}" "${TARGET_CABINET_SHA}" "${ARTIFACT_SHA256}"
 : > "${MUTATION_LOG}"
 
@@ -440,9 +467,26 @@ PREPARE_WORK_DIR="${TEMP_ROOT}/prepared-release"
 mkdir -p "${PREPARE_WORK_DIR}"
 prepare_release_bundle "${MANIFEST_FILE}" "${PREPARE_WORK_DIR}"
 [[ "${PREPARED_BOT_SHA}" == "${TARGET_BOT_SHA}" ]]
+[[ "${PREPARED_CABINET_REPO_URL}" == "${CABINET_TARGET_REPO_URL}" ]]
 [[ "${PREPARED_CABINET_SHA}" == "${TARGET_CABINET_SHA}" ]]
 [[ "${PREPARED_POSTGRES_IMAGE}" == *@sha256:* ]]
 [[ "${PREPARED_REDIS_IMAGE}" == *@sha256:* ]]
 [[ -f "${PREPARED_CABINET_ARTIFACT_FILE}" ]]
+
+run_python -c '
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+manifest = json.loads(path.read_text(encoding="utf-8"))
+del manifest["cabinet"]["repository"]
+manifest["schema_version"] = 1
+path.write_text(json.dumps(manifest), encoding="utf-8")
+' "${MANIFEST_FILE}"
+LEGACY_PREPARE_WORK_DIR="${TEMP_ROOT}/prepared-legacy-release"
+mkdir -p "${LEGACY_PREPARE_WORK_DIR}"
+prepare_release_bundle "${MANIFEST_FILE}" "${LEGACY_PREPARE_WORK_DIR}"
+[[ "${PREPARED_CABINET_REPO_URL}" == "${LEGACY_CABINET_REPO_URL}" ]]
 
 printf '%s\n' 'Release Bundle shell preflight harness passed.'

@@ -7,6 +7,7 @@ TEMP_ROOT="$(mktemp -d)"
 ORDER_LOG="${TEMP_ROOT}/order.log"
 TARGET_BOT_SHA="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 TARGET_CABINET_SHA="cccccccccccccccccccccccccccccccccccccccc"
+TARGET_CABINET_REPOSITORY="https://example.test/custom-cabinet.git"
 TARGET_BUNDLE_IDENTITY="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 TARGET_ARTIFACT_SHA256="ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
 
@@ -45,6 +46,7 @@ prepare_fresh_install_release() {
   PREPARED_RELEASE="fresh-test"
   PREPARED_BUNDLE_IDENTITY="${TARGET_BUNDLE_IDENTITY}"
   PREPARED_BOT_SHA="${TARGET_BOT_SHA}"
+  PREPARED_CABINET_REPO_URL="${TARGET_CABINET_REPOSITORY}"
   PREPARED_CABINET_SHA="${TARGET_CABINET_SHA}"
   PREPARED_CABINET_ARTIFACT_SHA256="${TARGET_ARTIFACT_SHA256}"
   PREPARED_CABINET_ARTIFACT_FILE="${TEMP_ROOT}/cabinet-dist.tar.gz"
@@ -57,6 +59,7 @@ configure_stack() {
   printf '%s\n' configure >> "${ORDER_LOG}"
   [[ "${BOT_VERSION_REF}" == "${TARGET_BOT_SHA}" ]]
   [[ "${CABINET_VERSION_REF}" == "${TARGET_CABINET_SHA}" ]]
+  [[ "${CABINET_REPO_URL}" == "${TARGET_CABINET_REPOSITORY}" ]]
   [[ "${POSTGRES_IMAGE}" == *@sha256:* ]]
   [[ "${REDIS_IMAGE}" == *@sha256:* ]]
   [[ -z "${CURRENT_RELEASE:-}" ]]

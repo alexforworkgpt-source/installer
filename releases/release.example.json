@@ -1,11 +1,12 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "release": "2026.08.0",
   "bot": {
     "repository": "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",
     "sha": "0000000000000000000000000000000000000000"
   },
   "cabinet": {
+    "repository": "https://github.com/OWNER/CUSTOM-CABINET.git",
     "source_sha": "0000000000000000000000000000000000000000",
     "artifact_url": "https://github.com/OWNER/INSTALLER/releases/download/v2026.08.0/cabinet-dist.tar.gz",
     "artifact_sha256": "0000000000000000000000000000000000000000000000000000000000000000"

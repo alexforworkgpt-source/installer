@@ -93,6 +93,7 @@ class ReleaseBundlePublicationTests(unittest.TestCase):
                 installer_tag="v2026.08.0",
                 bot_repository="https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",
                 bot_sha="b" * 40,
+                cabinet_repository="https://github.com/OWNER/custom-cabinet.git",
                 cabinet_sha="c" * 40,
                 artifact_sha256="a" * 64,
                 postgres_image=f"postgres@sha256:{'d' * 64}",
@@ -101,6 +102,11 @@ class ReleaseBundlePublicationTests(unittest.TestCase):
             )
 
             manifest = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(manifest["schema_version"], 2)
+            self.assertEqual(
+                manifest["cabinet"]["repository"],
+                "https://github.com/OWNER/custom-cabinet.git",
+            )
             self.assertEqual(
                 manifest["cabinet"]["artifact_url"],
                 "https://github.com/OWNER/installer/releases/download/v2026.08.0/cabinet-dist.tar.gz",
@@ -108,6 +114,10 @@ class ReleaseBundlePublicationTests(unittest.TestCase):
             bundle = load_release_bundle(output, supported_configuration_schema=1)
             self.assertEqual(bundle.release, "2026.08.0")
             self.assertEqual(bundle.bot.sha, "b" * 40)
+            self.assertEqual(
+                bundle.cabinet.repository,
+                "https://github.com/OWNER/custom-cabinet.git",
+            )
 
 
 if __name__ == "__main__":

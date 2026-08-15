@@ -30,17 +30,19 @@ VALID_CABINET_SHA = "c" * 40
 VALID_ARTIFACT_SHA256 = "a" * 64
 VALID_POSTGRES_DIGEST = "d" * 64
 VALID_REDIS_DIGEST = "e" * 64
+VALID_CABINET_REPOSITORY = "https://github.com/OWNER/custom-cabinet.git"
 
 
 def valid_manifest() -> dict[str, object]:
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "release": "2026.08.0",
         "bot": {
             "repository": "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",
             "sha": VALID_BOT_SHA,
         },
         "cabinet": {
+            "repository": VALID_CABINET_REPOSITORY,
             "source_sha": VALID_CABINET_SHA,
             "artifact_url": "https://github.com/OWNER/installer/releases/download/2026.08.0/cabinet-dist.tar.gz",
             "artifact_sha256": VALID_ARTIFACT_SHA256,
@@ -159,6 +161,7 @@ class ReleaseBundleTests(unittest.TestCase):
             self.assertEqual(bundle.release, "2026.08.0")
             self.assertEqual(bundle.bot.sha, VALID_BOT_SHA)
             self.assertEqual(bundle.cabinet.source_sha, VALID_CABINET_SHA)
+            self.assertEqual(bundle.cabinet.repository, VALID_CABINET_REPOSITORY)
             self.assertEqual(bundle.cabinet.artifact_sha256, VALID_ARTIFACT_SHA256)
             self.assertEqual(
                 bundle.images.postgres,
@@ -235,11 +238,96 @@ class ReleaseBundleTests(unittest.TestCase):
             )
             self.assertEqual(release_bundle_identity(previous_bundle), previous_identity)
 
+    def test_cabinet_repository_is_part_of_bundle_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            first_manifest_path = root / "first.json"
+            first_manifest_path.write_text(json.dumps(valid_manifest()), encoding="utf-8")
+            second_manifest = valid_manifest()
+            second_manifest["cabinet"]["repository"] = (
+                "https://github.com/OWNER/another-cabinet.git"
+            )
+            second_manifest_path = root / "second.json"
+            second_manifest_path.write_text(
+                json.dumps(second_manifest),
+                encoding="utf-8",
+            )
+
+            self.assertNotEqual(
+                release_bundle_identity(load_release_bundle(first_manifest_path, 1)),
+                release_bundle_identity(load_release_bundle(second_manifest_path, 1)),
+            )
+
+    def test_legacy_manifest_without_cabinet_repository_keeps_legacy_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            manifest = valid_manifest()
+            del manifest["cabinet"]["repository"]
+            manifest["schema_version"] = 1
+            manifest_path = Path(temp_dir) / "release.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            bundle = load_release_bundle(manifest_path, 1)
+            expected_payload = {
+                "release": bundle.release,
+                "bot": {"repository": bundle.bot.repository, "sha": bundle.bot.sha},
+                "cabinet": {
+                    "source_sha": bundle.cabinet.source_sha,
+                    "artifact_url": bundle.cabinet.artifact_url,
+                    "artifact_sha256": bundle.cabinet.artifact_sha256,
+                },
+                "images": {
+                    "postgres": bundle.images.postgres,
+                    "redis": bundle.images.redis,
+                },
+                "backend_contract": bundle.backend_contract,
+                "backend_contracts": {
+                    "bot": bundle.backend_contracts.bot,
+                    "cabinet": bundle.backend_contracts.cabinet,
+                },
+                "configuration_schema": bundle.configuration_schema,
+                "migration_policy": bundle.migration_policy,
+            }
+            expected_identity = hashlib.sha256(
+                json.dumps(
+                    expected_payload,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+            ).hexdigest()
+
+            self.assertIsNone(bundle.cabinet.repository)
+            self.assertEqual(release_bundle_identity(bundle), expected_identity)
+
+    def test_repository_contract_requires_schema_version_two(self) -> None:
+        invalid_manifests = []
+        version_one_with_repository = valid_manifest()
+        version_one_with_repository["schema_version"] = 1
+        invalid_manifests.append(version_one_with_repository)
+        version_one_with_null_repository = valid_manifest()
+        version_one_with_null_repository["schema_version"] = 1
+        version_one_with_null_repository["cabinet"]["repository"] = None
+        invalid_manifests.append(version_one_with_null_repository)
+        version_two_without_repository = valid_manifest()
+        del version_two_without_repository["cabinet"]["repository"]
+        invalid_manifests.append(version_two_without_repository)
+
+        for manifest in invalid_manifests:
+            with self.subTest(schema_version=manifest["schema_version"]):
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    manifest_path = Path(temp_dir) / "release.json"
+                    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+                    with self.assertRaisesRegex(ReleaseBundleError, r"schema_version"):
+                        load_release_bundle(manifest_path, supported_configuration_schema=1)
+
     def test_manifest_rejects_mutable_or_unsupported_release_identity(self) -> None:
         invalid_manifests = {
             "bot.sha": lambda manifest: manifest["bot"].update(sha="main"),
             "cabinet.source_sha": lambda manifest: manifest["cabinet"].update(
                 source_sha="v1.0.0"
+            ),
+            "cabinet.repository": lambda manifest: manifest["cabinet"].update(
+                repository="ssh://git@github.com/OWNER/custom-cabinet.git"
             ),
             "cabinet.artifact_sha256": lambda manifest: manifest["cabinet"].update(
                 artifact_sha256="short"
@@ -271,6 +359,20 @@ class ReleaseBundleTests(unittest.TestCase):
                         manifest_path,
                         supported_configuration_schema=1,
                     )
+
+    def test_manifest_rejects_non_github_cabinet_repositories(self) -> None:
+        for repository in (
+            "https://127.0.0.1/custom-cabinet.git",
+            "https://git.example.test/OWNER/custom-cabinet.git",
+        ):
+            with self.subTest(repository=repository), tempfile.TemporaryDirectory() as temp_dir:
+                manifest = valid_manifest()
+                manifest["cabinet"]["repository"] = repository
+                manifest_path = Path(temp_dir) / "release.json"
+                manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+                with self.assertRaisesRegex(ReleaseBundleError, r"cabinet\.repository"):
+                    load_release_bundle(manifest_path, supported_configuration_schema=1)
 
     def test_verified_cabinet_artifact_atomically_replaces_frontend(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -36,6 +36,7 @@ write_value() {
 write_value target-release release-new
 write_value target-bundle-identity bundle-new
 write_value target-bot-sha bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+write_value target-cabinet-repository https://example.test/custom-cabinet.git
 write_value target-cabinet-sha cccccccccccccccccccccccccccccccccccccccc
 write_value target-artifact-file "${CONTEXT_DIR}/cabinet-dist.tar.gz"
 write_value target-artifact-sha256 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
@@ -44,6 +45,7 @@ write_value target-redis-image redis@sha256:new
 write_value target-manifest-source https://example.test/release.json
 write_value migration-policy rollback-compatible
 write_value previous-bot-sha 1111111111111111111111111111111111111111
+write_value previous-cabinet-repository https://example.test/upstream-cabinet.git
 write_value previous-cabinet-sha 2222222222222222222222222222222222222222
 write_value previous-postgres-image postgres@sha256:old
 write_value previous-redis-image redis@sha256:old
@@ -72,6 +74,9 @@ INJECTED_STAGE=""
 secure_private_file() { chmod 600 "$1"; }
 file_sha256() { sha256sum "$1" | awk '{print $1}'; }
 compose_cmd() {
+  if [[ -f "${TEMP_ROOT}/saved-cabinet-repository" ]]; then
+    CABINET_REPO_URL="$(<"${TEMP_ROOT}/saved-cabinet-repository")"
+  fi
   case "$*" in
     'ps --status running --services')
       [[ "$(<"${BOT_STATE_FILE}")" == running ]] && printf '%s\n' bot
@@ -116,6 +121,9 @@ reload_caddy() {
 }
 apply_telegram_runtime_mode() {
   [[ "${INJECTED_STAGE}" != telegram ]] || return 1
+  if [[ -f "${TEMP_ROOT}/saved-cabinet-repository" ]]; then
+    CABINET_REPO_URL="$(<"${TEMP_ROOT}/saved-cabinet-repository")"
+  fi
   printf '%s\n' telegram >> "${ORDER_LOG}"
 }
 wait_for_runtime_ready() { :; }
@@ -128,8 +136,14 @@ current_alembic_revision() {
   printf '%s' "${REVISION}"
 }
 mark_runtime_apply_state() { printf '%s\n' mark-applied >> "${ORDER_LOG}"; }
-save_state() { printf '%s\n' "${CURRENT_RELEASE}" > "${TEMP_ROOT}/saved-release"; }
-rollback_release_sources() { printf '%s\n' rollback-sources >> "${ORDER_LOG}"; }
+save_state() {
+  printf '%s\n' "${CURRENT_RELEASE}" > "${TEMP_ROOT}/saved-release"
+  printf '%s\n' "${CABINET_REPO_URL}" > "${TEMP_ROOT}/saved-cabinet-repository"
+}
+rollback_release_sources() {
+  [[ "${CABINET_REPO_URL}" == https://example.test/upstream-cabinet.git ]]
+  printf '%s\n' rollback-sources >> "${ORDER_LOG}"
+}
 safe_rm_rf_under() { rm -rf "$2"; }
 restore_verified_update_dump() {
   [[ "$1" == "${CONTEXT_DIR}/verified.dump" ]]
@@ -157,12 +171,14 @@ run_verify_commit_stage
 run_finalize_commit_stage
 [[ ! -f "${marker_file}" ]]
 [[ "$(<"${TEMP_ROOT}/saved-release")" == release-new ]]
+[[ "$(<"${TEMP_ROOT}/saved-cabinet-repository")" == https://example.test/custom-cabinet.git ]]
 grep -Fq 'after_revision=rev-new' "${CONTEXT_DIR}/verified.metadata.txt"
 
 : > "${ORDER_LOG}"
 write_update_marker "${dump_reference}"
 printf '%s\n' running > "${BOT_STATE_FILE}"
 run_rollback_release_stage
+[[ "$(<"${TEMP_ROOT}/saved-cabinet-repository")" == https://example.test/upstream-cabinet.git ]]
 run_restore_dump_stage "${dump_reference}" rev-old
 run_verify_rollback_stage release-old rev-old "${dump_reference}"
 grep -Fq 'recovery_point=rolled-back' "${marker_file}"
@@ -170,6 +186,7 @@ run_finalize_terminal_stage rolled-back
 [[ ! -f "${marker_file}" ]]
 [[ "$(<"${BOT_STATE_FILE}")" == running ]]
 [[ "$(<"${TEMP_ROOT}/saved-release")" == release-old ]]
+[[ "$(<"${TEMP_ROOT}/saved-cabinet-repository")" == https://example.test/upstream-cabinet.git ]]
 [[ "$(<"${CABINET_DIST_DIR}/index.html")" == old ]]
 grep -Fxq rollback-sources "${ORDER_LOG}"
 grep -Fxq restore-dump "${ORDER_LOG}"

@@ -93,6 +93,7 @@ safe_stop_bot_and_verify() {
 }
 
 restore_previous_release_variables() {
+  CABINET_REPO_URL="$(context_value previous-cabinet-repository)"
   POSTGRES_IMAGE="$(context_value previous-postgres-image)"
   REDIS_IMAGE="$(context_value previous-redis-image)"
   CURRENT_RELEASE="$(context_value previous-release)"
@@ -167,6 +168,7 @@ run_abort_protection_stage() {
 }
 
 run_apply_release_stage() {
+  CABINET_REPO_URL="$(context_value target-cabinet-repository)"
   checkout_repo_ref \
     "${BOT_REPO_DIR}" "${BOT_REPO_URL}" "$(context_value target-bot-sha)"
   verify_release_checkout "${BOT_REPO_DIR}" "$(context_value target-bot-sha)"
@@ -207,6 +209,7 @@ run_commit_release_stage() {
   LAST_CABINET_VERSION_REF="$(context_value previous-cabinet-sha)"
   LAST_RELEASE_BUNDLE_IDENTITY="$(context_value previous-bundle-identity)"
   LAST_CABINET_ARTIFACT_SHA256="$(context_value previous-artifact-identity)"
+  CABINET_REPO_URL="$(context_value target-cabinet-repository)"
   CURRENT_RELEASE="$(context_value target-release)"
   CURRENT_RELEASE_BUNDLE_IDENTITY="$(context_value target-bundle-identity)"
   CURRENT_CABINET_ARTIFACT_SHA256="$(context_value target-artifact-sha256)"
@@ -239,6 +242,7 @@ run_rollback_release_stage() {
   local previous_cabinet_dir="${context_dir}/previous-cabinet"
 
   safe_stop_bot_and_verify
+  restore_previous_release_variables
   rollback_release_sources \
     "$(context_value previous-bot-sha)" \
     "$(context_value previous-cabinet-sha)"
@@ -248,7 +252,9 @@ run_rollback_release_stage() {
   else
     mkdir -p "${CABINET_DIST_DIR}"
   fi
-  restore_previous_release_variables
+  save_state
+  sync -f "${STATE_FILE}"
+  sync -f "${STATE_DIR}"
   render_compose_file
   compose_cmd config -q
   compose_cmd up -d --wait --wait-timeout 180 postgres redis
@@ -294,6 +300,7 @@ run_verify_rollback_stage() {
 }
 
 run_verify_commit_stage() {
+  CABINET_REPO_URL="$(context_value target-cabinet-repository)"
   POSTGRES_IMAGE="$(context_value target-postgres-image)"
   REDIS_IMAGE="$(context_value target-redis-image)"
   BOT_VERSION_REF="$(context_value target-bot-sha)"
