@@ -11,11 +11,6 @@ on:
         description: Existing immutable installer tag, for example v2026.08.0
         required: true
         type: string
-      bot_repository:
-        description: Public Bot Git repository
-        required: true
-        default: https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git
-        type: string
       bot_ref:
         description: Bot tag, branch or SHA to resolve
         required: true
@@ -45,6 +40,10 @@ on:
         description: Nginx runtime image pinned by sha256 digest
         required: true
         type: string
+      lifecycle_proof:
+        description: Exact confirmation that disposable Ubuntu 24.04 lifecycle passed
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -60,7 +59,7 @@ jobs:
     env:
       RELEASE_NAME: ${{ inputs.release }}
       INSTALLER_TAG: ${{ inputs.installer_tag }}
-      BOT_REPOSITORY: ${{ inputs.bot_repository }}
+      BOT_REPOSITORY: https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git
       BOT_REF: ${{ inputs.bot_ref }}
       CABINET_REPOSITORY: ${{ inputs.cabinet_repository }}
       CABINET_REF: ${{ inputs.cabinet_ref }}
@@ -83,6 +82,7 @@ jobs:
           set -Eeuo pipefail
           [[ "${RELEASE_NAME}" =~ ^[A-Za-z0-9._-]+$ ]]
           [[ "${INSTALLER_TAG}" =~ ^[A-Za-z0-9._-]+$ ]]
+          test "${{ inputs.lifecycle_proof }}" = "ubuntu-24.04-passed"
           test "$(git rev-parse HEAD)" = "$(git rev-parse "refs/tags/${INSTALLER_TAG}^{commit}")"
           if gh release view "${INSTALLER_TAG}" >/dev/null 2>&1; then
             is_draft="$(gh release view "${INSTALLER_TAG}" --json isDraft --jq .isDraft)"
@@ -112,6 +112,9 @@ jobs:
           bash tests/integration/postgres-dump-verification.sh
           bash tests/integration/protected-update-adapter.sh
           bash tests/integration/protected-update-recovery.sh
+          bash tests/integration/runtime-isolation.sh
+          bash tests/integration/management-launcher.sh
+          bash tests/integration/production-readiness.sh
 
       - name: Resolve immutable source revisions
         id: revisions

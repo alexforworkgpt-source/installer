@@ -1,6 +1,17 @@
 __HOOK_DOMAIN__ {
     encode gzip zstd
-    reverse_proxy 127.0.0.1:__BOT_HTTP_PORT__
+
+    @telegram path /webhook /webhook/*
+    handle @telegram {
+        reverse_proxy 127.0.0.1:__BOT_HTTP_PORT__
+    }
+
+    @remnawave path /remnawave-webhook /remnawave-webhook/*
+    handle @remnawave {
+        reverse_proxy 127.0.0.1:__BOT_HTTP_PORT__
+    }
+
+    respond 404
 }
 
 __APP_DOMAIN__ {

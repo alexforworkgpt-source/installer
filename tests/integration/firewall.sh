@@ -108,15 +108,10 @@ cat > "${FAKE_BIN}/docker" <<'EOF'
 #!/usr/bin/env bash
 set -Eeuo pipefail
 [[ "${1:-}" != "info" ]] || exit 0
-if [[ "${1:-}" == "container" && "${2:-}" == "inspect" ]]; then
-  case "${3:-}" in
-    botstack_bot|botstack_postgres|botstack_redis) exit 0 ;;
-  esac
-fi
 if [[ "${1:-}" == "port" ]]; then
   case "${2:-}" in
-    botstack_bot) cat "${FIREWALL_FAKE_STATE}/bot-ports" ;;
-    botstack_postgres|botstack_redis) : ;;
+    bot-container-id) cat "${FIREWALL_FAKE_STATE}/bot-ports" ;;
+    postgres-container-id|redis-container-id) : ;;
   esac
   exit 0
 fi
@@ -143,6 +138,15 @@ log_warn() { :; }
 die() { printf '%s\n' "$*" >&2; return 1; }
 is_valid_port() { [[ "$1" =~ ^[0-9]+$ ]] && ((1 <= 10#$1 && 10#$1 <= 65535)); }
 secure_private_file() { chmod 600 "$1"; }
+compose_cmd() {
+  [[ "${1:-}" == ps && "${2:-}" == -q ]] || return 1
+  case "${3:-}" in
+    bot) printf '%s\n' bot-container-id ;;
+    postgres) printf '%s\n' postgres-container-id ;;
+    redis) printf '%s\n' redis-container-id ;;
+    *) return 1 ;;
+  esac
+}
 
 # shellcheck source=lib/firewall.sh
 source "${SCRIPT_DIR}/lib/firewall.sh"

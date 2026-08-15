@@ -1,7 +1,6 @@
 services:
   postgres:
     image: "__POSTGRES_IMAGE__"
-    container_name: botstack_postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: "__POSTGRES_DB__"
@@ -19,7 +18,6 @@ services:
 
   redis:
     image: "__REDIS_IMAGE__"
-    container_name: botstack_redis
     restart: unless-stopped
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
@@ -34,8 +32,7 @@ services:
     build:
       context: "__BOT_REPO_DIR__"
       dockerfile: Dockerfile
-    container_name: botstack_bot
-    user: "0:0"
+    user: "1000:1000"
     restart: unless-stopped
     depends_on:
       postgres:

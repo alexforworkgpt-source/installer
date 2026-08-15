@@ -29,6 +29,7 @@ DEFAULT_APP_LOGO="B"
 DEFAULT_CURL_CONNECT_TIMEOUT="5"
 DEFAULT_CURL_MAX_TIME="20"
 DEFAULT_MENU_LAUNCHER_PATH="/usr/local/bin/vpn"
+DEFAULT_INSTALLER_HOME="/opt/bedolaga-installer"
 
 UI_RESET=""
 UI_BOLD=""
@@ -640,20 +641,101 @@ clear_console_screen() {
   fi
 }
 
-install_menu_launcher() {
-  local launcher_path="${1:-${DEFAULT_MENU_LAUNCHER_PATH}}"
+installer_source_identity() {
+  local identity=""
+
+  if [[ -d "${INSTALLER_DIR}/.git" ]]; then
+    identity="$(git -C "${INSTALLER_DIR}" rev-parse HEAD 2>/dev/null || true)"
+  fi
+  if [[ -z "${identity}" && -f "${INSTALLER_DIR}/bot-menu.sh" ]]; then
+    identity="$({
+      cd "${INSTALLER_DIR}"
+      find . \
+        \( -path './.git' -o -path './.scratch' -o -path './state' \
+           -o -path './.playwright-mcp' -o -name '__pycache__' \) -prune \
+        -o -type f \
+           ! -path './server.env' \
+           ! -path './env.txt' \
+           ! -name '*.pyc' \
+           -print0 \
+        | sort -z \
+        | while IFS= read -r -d '' source_file; do
+            printf '%s\0' "${source_file}"
+            sha256sum "${source_file}" | cut -d ' ' -f1
+          done
+    } | sha256sum | cut -d ' ' -f1)"
+  fi
+  [[ "${identity}" =~ ^[0-9a-f]{40,64}$ ]] || return 1
+  printf '%s' "${identity}"
+}
+
+install_management_copy() {
+  local installer_home="${1:-${DEFAULT_INSTALLER_HOME}}"
+  local identity
+  local releases_dir
+  local release_dir
+  local staged_release
+  local staged_current
+  local previous_current
+
+  [[ -f "${INSTALLER_DIR}/bot-menu.sh" ]] || return 1
+  [[ "${installer_home}" == /opt/* || "${installer_home}" == /usr/local/* || "${installer_home}" == /tmp/* ]] || return 1
+  identity="$(installer_source_identity)" || return 1
+  releases_dir="${installer_home}/releases"
+  release_dir="${releases_dir}/${identity}"
+  mkdir -p "${releases_dir}"
+
+  if [[ ! -d "${release_dir}" ]]; then
+    staged_release="$(mktemp -d "${installer_home}/.release.XXXXXX")" || return 1
+    if ! (
+      cd "${INSTALLER_DIR}"
+      tar -cf - \
+        --exclude='./.git' \
+        --exclude='./.scratch' \
+        --exclude='./state' \
+        --exclude='./server.env' \
+        --exclude='./env.txt' \
+        --exclude='./.playwright-mcp' \
+        --exclude='*/__pycache__' \
+        --exclude='*.pyc' \
+        .
+    ) | tar -xf - -C "${staged_release}"; then
+      safe_rm_rf_under "${installer_home}" "${staged_release}"
+      return 1
+    fi
+    mkdir -p "${staged_release}/state"
+    chmod 700 "${staged_release}/state"
+    chmod 755 "${staged_release}/bot-menu.sh"
+    mv "${staged_release}" "${release_dir}"
+  fi
+
+  staged_current="$(mktemp -d "${installer_home}/.current.XXXXXX")" || return 1
+  cp -a "${release_dir}/." "${staged_current}/"
+  previous_current="${installer_home}/.previous-current"
+  if [[ -e "${previous_current}" ]]; then
+    safe_rm_rf_under "${installer_home}" "${previous_current}"
+  fi
+  if [[ -e "${installer_home}/current" ]]; then
+    mv "${installer_home}/current" "${previous_current}"
+  fi
+  mv "${staged_current}" "${installer_home}/current"
+  if [[ -e "${previous_current}" ]]; then
+    safe_rm_rf_under "${installer_home}" "${previous_current}"
+  fi
+  printf '%s' "${installer_home}/current/bot-menu.sh"
+}
+
+write_menu_launcher() {
+  local launcher_path="$1"
+  local script_path="$2"
   local launcher_dir
-  local script_path
   local temp_file
 
-  [[ "${EUID}" -eq 0 ]] || return 0
-
   launcher_dir="$(dirname "${launcher_path}")"
-  script_path="${INSTALLER_DIR}/bot-menu.sh"
   [[ -d "${launcher_dir}" ]] || mkdir -p "${launcher_dir}"
-  [[ -f "${script_path}" ]] || return 0
+  [[ -f "${script_path}" ]] || return 1
 
-  temp_file="$(mktemp "${launcher_dir}/.vpn-launcher.XXXXXX")" || return 0
+  temp_file="$(mktemp "${launcher_dir}/.vpn-launcher.XXXXXX")" || return 1
   cat > "${temp_file}" <<EOF
 #!/usr/bin/env bash
 set -Eeuo pipefail
@@ -667,6 +749,15 @@ EOF
 
   chmod 755 "${temp_file}"
   mv -f "${temp_file}" "${launcher_path}"
+}
+
+install_menu_launcher() {
+  local launcher_path="${1:-${DEFAULT_MENU_LAUNCHER_PATH}}"
+  local installed_script
+
+  [[ "${EUID}" -eq 0 ]] || return 0
+  installed_script="$(install_management_copy)" || return 1
+  write_menu_launcher "${launcher_path}" "${installed_script}"
 }
 
 python_cmd() {
@@ -840,6 +931,17 @@ curl_with_timeouts() {
     --connect-timeout "${CURL_CONNECT_TIMEOUT:-${DEFAULT_CURL_CONNECT_TIMEOUT}}" \
     --max-time "${CURL_MAX_TIME:-${DEFAULT_CURL_MAX_TIME}}" \
     "$@"
+}
+
+public_https_status() {
+  local url="$1"
+  local status
+
+  [[ "${url}" == https://* ]] || return 1
+  status="$(curl_with_timeouts -sS -o /dev/null -w '%{http_code}' "${url}" 2>/dev/null)" \
+    || return 1
+  [[ "${status}" =~ ^[1-5][0-9][0-9]$ ]] || return 1
+  printf '%s' "${status}"
 }
 
 secure_private_file() {
@@ -1245,7 +1347,7 @@ reset_loaded_state_vars() {
   unset TIMEZONE DEFAULT_LANGUAGE APP_NAME APP_LOGO
   unset WEBHOOK_SECRET_TOKEN WEB_API_DEFAULT_TOKEN CABINET_JWT_SECRET
   unset POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD POSTGRES_IMAGE REDIS_URL REDIS_IMAGE
-  unset BOT_HTTP_PORT BOT_RUN_MODE WEB_API_ENABLED CABINET_ENABLED
+  unset BOT_HTTP_PORT BOT_RUN_MODE WEB_API_ENABLED CABINET_ENABLED COMPOSE_PROJECT_NAME
   unset CABINET_EMAIL_AUTH_ENABLED CABINET_EMAIL_VERIFICATION_ENABLED
   unset BOT_VERSION_REF CABINET_VERSION_REF LAST_BOT_VERSION_REF LAST_CABINET_VERSION_REF
   unset RELEASE_MANIFEST_SOURCE CURRENT_RELEASE
@@ -1258,10 +1360,12 @@ reset_project_root_paths() {
   unset BOT_REPO_DIR CABINET_REPO_DIR
   unset BOT_RUNTIME_DIR BOT_DATA_DIR BOT_LOGS_DIR BOT_UPLOADS_DIR CABINET_DIST_DIR
   unset BOT_ENV_FILE BOT_OVERRIDE_ENV_FILE CABINET_ENV_FILE COMPOSE_FILE CADDY_CANDIDATE_FILE
+  unset CADDY_SNIPPET_FILE
 }
 
 set_runtime_paths() {
   PROJECT_ROOT="${PROJECT_ROOT:-${DEFAULT_PROJECT_ROOT}}"
+  COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-$(compose_project_name_for_root "${PROJECT_ROOT}")}"
   REPOS_DIR="${PROJECT_ROOT}/repos"
   RUNTIME_DIR="${PROJECT_ROOT}/runtime"
   STATE_DIR="${PROJECT_ROOT}/state"
@@ -1283,8 +1387,21 @@ set_runtime_paths() {
   CADDY_CANDIDATE_FILE="${CADDY_CANDIDATE_FILE:-${STATE_DIR}/bot-stack.caddy}"
 
   CADDY_SNIPPET_DIR="${CADDY_SNIPPET_DIR:-/etc/caddy/conf.d}"
-  CADDY_SNIPPET_FILE="${CADDY_SNIPPET_FILE:-${CADDY_SNIPPET_DIR}/bot-stack.caddy}"
+  CADDY_SNIPPET_FILE="${CADDY_SNIPPET_FILE:-${CADDY_SNIPPET_DIR}/${COMPOSE_PROJECT_NAME}.caddy}"
   STATE_FILE="${STATE_DIR}/install.state"
+}
+
+compose_project_name_for_root() {
+  local project_root="$1"
+  local slug
+  local digest
+
+  slug="$(basename "${project_root}" \
+    | tr '[:upper:]' '[:lower:]' \
+    | sed -E 's/[^a-z0-9_-]+/-/g; s/^[-_]+//; s/[-_]+$//')"
+  slug="${slug:-stack}"
+  digest="$(printf '%s' "${project_root}" | sha256sum | cut -c1-8)"
+  printf 'bedolaga-%s-%s' "${slug:0:32}" "${digest}"
 }
 
 file_sha256() {
@@ -1885,6 +2002,7 @@ POSTGRES_IMAGE=$(shell_quote "${POSTGRES_IMAGE}")
 REDIS_URL=$(shell_quote "${REDIS_URL}")
 REDIS_IMAGE=$(shell_quote "${REDIS_IMAGE}")
 BOT_HTTP_PORT=$(shell_quote "${BOT_HTTP_PORT}")
+COMPOSE_PROJECT_NAME=$(shell_quote "${COMPOSE_PROJECT_NAME}")
 BOT_RUN_MODE=$(shell_quote "${BOT_RUN_MODE}")
 WEB_API_ENABLED=$(shell_quote "${WEB_API_ENABLED}")
 CABINET_ENABLED=$(shell_quote "${CABINET_ENABLED}")
@@ -1959,7 +2077,7 @@ latest_remote_tag() {
 
 compose_cmd() {
   require_state_file
-  local compose_args=(--env-file "${BOT_ENV_FILE}" -f "${COMPOSE_FILE}")
+  local compose_args=(--project-name "${COMPOSE_PROJECT_NAME}" --env-file "${BOT_ENV_FILE}" -f "${COMPOSE_FILE}")
   local migration_override="${STATE_DIR}/migration-image.override.yml"
   if [[ -f "${migration_override}" ]]; then
     compose_args+=(-f "${migration_override}")
@@ -1987,9 +2105,53 @@ validate_caddy() {
   caddy validate --config /etc/caddy/Caddyfile >/dev/null
 }
 
+verify_caddy_public_postcheck() {
+  local attempt
+  local app_status
+  local hook_status
+
+  [[ -n "${APP_DOMAIN:-}" && -n "${HOOK_DOMAIN:-}" ]] || return 0
+  for attempt in {1..12}; do
+    app_status="$(public_https_status "https://${APP_DOMAIN}/" || true)"
+    hook_status="$(public_https_status "https://${HOOK_DOMAIN}/" || true)"
+    if [[ "${app_status}" == "200" && "${hook_status}" == "404" ]]; then
+      return 0
+    fi
+    sleep 5
+  done
+  return 1
+}
+
+restore_caddy_candidate_backup() {
+  local backup_file="${CADDY_SNIPPET_FILE}.rollback"
+  local absent_marker="${CADDY_SNIPPET_FILE}.rollback-absent"
+
+  if [[ -f "${backup_file}" ]]; then
+    mv -f "${backup_file}" "${CADDY_SNIPPET_FILE}"
+  elif [[ -f "${absent_marker}" ]]; then
+    rm -f "${CADDY_SNIPPET_FILE}"
+  else
+    return 1
+  fi
+  rm -f "${absent_marker}"
+}
+
+commit_caddy_candidate() {
+  rm -f "${CADDY_SNIPPET_FILE}.rollback" "${CADDY_SNIPPET_FILE}.rollback-absent"
+}
+
 reload_caddy() {
-  validate_caddy
-  systemctl reload caddy
+  local postcheck_mode="${1:-verify-public}"
+  if ! validate_caddy \
+    || ! systemctl reload caddy \
+    || { [[ "${postcheck_mode}" != skip-public-postcheck ]] && ! verify_caddy_public_postcheck; }; then
+    if restore_caddy_candidate_backup; then
+      validate_caddy >/dev/null 2>&1 || true
+      systemctl reload caddy >/dev/null 2>&1 || true
+    fi
+    return 1
+  fi
+  commit_caddy_candidate
 }
 
 install_caddy_candidate() {
@@ -1999,22 +2161,24 @@ install_caddy_candidate() {
   ensure_caddy_import
   mkdir -p "${CADDY_SNIPPET_DIR}"
 
-  local backup_file="${CADDY_SNIPPET_FILE}.bak"
+  local backup_file="${CADDY_SNIPPET_FILE}.rollback"
+  local absent_marker="${CADDY_SNIPPET_FILE}.rollback-absent"
+  local staged_file
+  rm -f "${backup_file}" "${absent_marker}"
   if [[ -f "${CADDY_SNIPPET_FILE}" ]]; then
     cp "${CADDY_SNIPPET_FILE}" "${backup_file}"
+  else
+    : > "${absent_marker}"
   fi
 
-  cp "${CADDY_CANDIDATE_FILE}" "${CADDY_SNIPPET_FILE}"
+  staged_file="$(mktemp "${CADDY_SNIPPET_DIR}/.caddy-candidate.XXXXXX")" || return 1
+  cp "${CADDY_CANDIDATE_FILE}" "${staged_file}"
+  chmod 644 "${staged_file}"
+  mv -f "${staged_file}" "${CADDY_SNIPPET_FILE}"
   if ! validate_caddy; then
-    if [[ -f "${backup_file}" ]]; then
-      cp "${backup_file}" "${CADDY_SNIPPET_FILE}"
-    else
-      rm -f "${CADDY_SNIPPET_FILE}"
-    fi
+    restore_caddy_candidate_backup || true
     die "Сгенерированный конфиг Caddy невалиден. Предыдущий конфиг восстановлен."
   fi
-
-  rm -f "${backup_file}"
 }
 
 set_default_runtime_values() {
@@ -2037,6 +2201,7 @@ set_default_runtime_values() {
   REDIS_URL="${REDIS_URL:-${DEFAULT_REDIS_URL}}"
   REDIS_IMAGE="${REDIS_IMAGE:-${DEFAULT_REDIS_IMAGE}}"
   BOT_HTTP_PORT="${BOT_HTTP_PORT:-${DEFAULT_BOT_HTTP_PORT}}"
+  COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-$(compose_project_name_for_root "${PROJECT_ROOT}")}"
   BOT_RUN_MODE="${BOT_RUN_MODE:-webhook}"
   WEB_API_ENABLED="${WEB_API_ENABLED:-true}"
   CABINET_ENABLED="${CABINET_ENABLED:-true}"

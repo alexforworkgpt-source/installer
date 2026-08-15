@@ -19,6 +19,9 @@ cleanup() {
 }
 trap cleanup EXIT
 
+grep -Fq 'source "${SCRIPT_DIR}/lib/firewall.sh"' \
+  "${SCRIPT_DIR}/lib/protected_update_adapter.sh"
+
 mkdir -p "${CONTEXT_DIR}/previous-cabinet" "${PROJECT_ROOT}/runtime/cabinet-dist"
 printf '%s\n' state > "${STATE_FILE}"
 printf '%s\n' running > "${BOT_STATE_FILE}"
@@ -146,6 +149,8 @@ grep -Fq "recovery_point=${dump_reference}" "${marker_file}"
 run_apply_release_stage
 REVISION="rev-new"
 run_verify_release_stage
+[[ "$(run_current_revision_stage)" == rev-new ]]
+[[ "$(<"${BOT_STATE_FILE}")" == running ]]
 run_commit_release_stage "${dump_reference}" rev-old rev-new
 grep -Fq 'recovery_point=committed' "${marker_file}"
 run_verify_commit_stage

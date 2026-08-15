@@ -4,6 +4,7 @@ from dataclasses import FrozenInstanceError
 import json
 import hashlib
 import os
+import stat
 import subprocess
 import tarfile
 import tempfile
@@ -299,6 +300,14 @@ class ReleaseBundleTests(unittest.TestCase):
                 (destination / "assets" / "app.js").read_text(encoding="utf-8"),
                 "new bundle",
             )
+            if os.name == "posix":
+                self.assertEqual(stat.S_IMODE(destination.stat().st_mode), 0o755)
+                self.assertEqual(
+                    stat.S_IMODE((destination / "assets").stat().st_mode), 0o755
+                )
+                self.assertEqual(
+                    stat.S_IMODE((destination / "index.html").stat().st_mode), 0o644
+                )
             self.assertFalse(any(root.glob(".cabinet-dist.*")))
 
     def test_cabinet_activation_failure_preserves_old_frontend(self) -> None:

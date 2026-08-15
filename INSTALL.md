@@ -4,6 +4,7 @@
 
 - Ubuntu 24.04
 - доступ `root` или `sudo`
+- не менее 1.5 GB RAM и 3 GB свободного места
 - два домена, уже направленные на сервер
 - возможность открыть `80/tcp`, `443/tcp` и `443/udp` во внешнем firewall провайдера VPS
 - доступность внешней API-панели с сервера
@@ -70,6 +71,8 @@ sudo bash bot-menu.sh
 9. запустит бота, Postgres и Redis
 10. создаст и применит конфиг Caddy
 11. зарегистрирует Telegram webhook, если включён webhook-режим
+12. установит версионированную management-копию в `/opt/bedolaga-installer`
+    и launcher `/usr/local/bin/vpn`
 
 При повторной полной установке installer создаёт recovery snapshot до изменения
 настроек, generated files, repositories или runtime. Успех фиксируется только
@@ -85,6 +88,8 @@ sudo bash bot-menu.sh
 
 Порты Bot API, PostgreSQL и Redis в UFW не открываются: Bot API привязан к
 `127.0.0.1`, а базы доступны только внутри Docker-сети.
+Bot container работает как UID/GID `1000:1000`; installer заранее создаёт и
+назначает ему только writable data, logs и uploads.
 
 ## Итоговый environment
 
@@ -120,6 +125,10 @@ defaults.
 
 Ожидаемый результат:
 
-- `https://hooks.example.com/cabinet/branding` отвечает
+- `https://hooks.example.com/` отвечает `404` (default deny)
+- `https://hooks.example.com/remnawave-webhook` подтверждает включённый webhook
 - `https://app.example.com/` открывает кабинет
 - `https://app.example.com/api/cabinet/branding` отвечает
+
+После установки исходный clone больше не нужен для обслуживания: используйте
+`sudo vpn`. Удаление выбранного stack не удаляет эту команду.

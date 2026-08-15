@@ -30,7 +30,7 @@ recover_interrupted_file_recovery \
   || die "Прерванный File Recovery требует ручной проверки Docker/Caddy перед продолжением."
 recover_interrupted_runtime_change \
   || die "Прерванный Runtime Change требует ручного восстановления перед продолжением."
-recover_pending_migration_bot || die "Сначала остановите контейнер botstack_bot вручную и повторите запуск installer."
+recover_pending_migration_bot || die "Сначала остановите Bot service выбранного Compose project и повторите запуск installer."
 recover_completed_migration_restart || true
 install_menu_launcher || true
 clear_console_screen

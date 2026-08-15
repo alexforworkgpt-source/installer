@@ -327,7 +327,10 @@ get_service_state() {
 
 http_status_code() {
   local url="$1"
-  curl_with_timeouts -ksS -o /dev/null -w "%{http_code}" "${url}" 2>/dev/null || true
+  case "${url}" in
+    https://*) public_https_status "${url}" || printf '000' ;;
+    *) curl_with_timeouts -sS -o /dev/null -w "%{http_code}" "${url}" 2>/dev/null || printf '000' ;;
+  esac
 }
 
 telegram_webhook_summary() {
@@ -354,12 +357,12 @@ verify_runtime_health() {
   local_status="$(http_status_code "http://127.0.0.1:${BOT_HTTP_PORT}/cabinet/branding")"
   app_api_status="$(http_status_code "https://${APP_DOMAIN}/api/cabinet/branding")"
   app_front_status="$(http_status_code "https://${APP_DOMAIN}/")"
-  hook_status="$(http_status_code "https://${HOOK_DOMAIN}/cabinet/branding")"
+  hook_status="$(http_status_code "https://${HOOK_DOMAIN}/")"
 
   [[ "${local_status}" == "200" ]] || { log_warn "Локальный API вернул ${local_status:-n/a}"; ((failures++)); }
   [[ "${app_api_status}" == "200" ]] || { log_warn "App API вернул ${app_api_status:-n/a}"; ((failures++)); }
   [[ "${app_front_status}" == "200" ]] || { log_warn "App frontend вернул ${app_front_status:-n/a}"; ((failures++)); }
-  [[ "${hook_status}" == "200" ]] || { log_warn "Hook API вернул ${hook_status:-n/a}"; ((failures++)); }
+  [[ "${hook_status}" == "404" ]] || { log_warn "Hook deny-by-default вернул ${hook_status:-n/a}"; ((failures++)); }
   verify_private_runtime_ports || { log_warn "Найдены небезопасные runtime port bindings."; ((failures++)); }
 
   if [[ "${BOT_RUN_MODE}" == "webhook" ]] && ! check_telegram_webhook_matches; then
@@ -397,14 +400,14 @@ wait_for_runtime_ready() {
     local_status="$(http_status_code "http://127.0.0.1:${BOT_HTTP_PORT}/cabinet/branding")"
     app_api_status="$(http_status_code "https://${APP_DOMAIN}/api/cabinet/branding")"
     app_front_status="$(http_status_code "https://${APP_DOMAIN}/")"
-    hook_status="$(http_status_code "https://${HOOK_DOMAIN}/cabinet/branding")"
+    hook_status="$(http_status_code "https://${HOOK_DOMAIN}/")"
     webhook_ready="true"
 
     if [[ "${BOT_RUN_MODE}" == "webhook" ]] && ! check_telegram_webhook_matches; then
       webhook_ready="false"
     fi
 
-    if [[ "${local_status}" == "200" && "${app_api_status}" == "200" && "${app_front_status}" == "200" && "${hook_status}" == "200" && "${webhook_ready}" == "true" ]]; then
+    if [[ "${local_status}" == "200" && "${app_api_status}" == "200" && "${app_front_status}" == "200" && "${hook_status}" == "404" && "${webhook_ready}" == "true" ]]; then
       if [[ -t 1 ]]; then
         printf '\rЖду готовности сервисов... OK%*s\n' 40 ''
       fi
@@ -447,7 +450,7 @@ print_post_deploy_summary() {
 Сводка деплоя
 -------------
 Webhook URL:          ${WEBHOOK_URL}/webhook
-Backend через hook:   https://${HOOK_DOMAIN}/cabinet/branding
+Remnawave webhook:    https://${HOOK_DOMAIN}/remnawave-webhook
 Cabinet URL:          https://${APP_DOMAIN}/
 API cabinet:          https://${APP_DOMAIN}/api/cabinet/branding
 Файл bot.env:         ${BOT_ENV_FILE}
@@ -610,7 +613,7 @@ status_stack() {
   docker_state="$(get_service_state docker)"
   caddy_state="$(get_service_state caddy)"
   local_health="$(http_status_code "http://127.0.0.1:${BOT_HTTP_PORT}/cabinet/branding")"
-  hook_health="$(http_status_code "https://${HOOK_DOMAIN}/cabinet/branding")"
+  hook_health="$(http_status_code "https://${HOOK_DOMAIN}/")"
   app_api_health="$(http_status_code "https://${APP_DOMAIN}/api/cabinet/branding")"
   app_front_health="$(http_status_code "https://${APP_DOMAIN}/")"
   webhook_summary="$(telegram_webhook_summary)"
@@ -633,7 +636,7 @@ status_stack() {
     "Docker=${docker_state}" \
     "Caddy=${caddy_state}" \
     "Локальный API=${local_health:-n/a}" \
-    "Hook API=${hook_health:-n/a}" \
+    "Hook default deny=${hook_health:-n/a}" \
     "App API=${app_api_health:-n/a}" \
     "App frontend=${app_front_health:-n/a}" \
     "Pending apply=${pending_changes}" \

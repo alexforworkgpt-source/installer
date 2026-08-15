@@ -48,6 +48,8 @@ source "${SCRIPT_DIR}/lib/firewall.sh"
 source "${SCRIPT_DIR}/lib/install.sh"
 # shellcheck source=lib/deploy.sh
 source "${SCRIPT_DIR}/lib/deploy.sh"
+# shellcheck source=lib/doctor.sh
+source "${SCRIPT_DIR}/lib/doctor.sh"
 # shellcheck source=lib/config_editor.sh
 source "${SCRIPT_DIR}/lib/config_editor.sh"
 

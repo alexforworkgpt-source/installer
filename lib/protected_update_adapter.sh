@@ -22,8 +22,12 @@ if [[ "${source_only}" == false ]]; then
   source "${SCRIPT_DIR}/lib/configure.sh"
   # shellcheck source=lib/install.sh
   source "${SCRIPT_DIR}/lib/install.sh"
+  # shellcheck source=lib/firewall.sh
+  source "${SCRIPT_DIR}/lib/firewall.sh"
   # shellcheck source=lib/deploy.sh
   source "${SCRIPT_DIR}/lib/deploy.sh"
+  # shellcheck source=lib/doctor.sh
+  source "${SCRIPT_DIR}/lib/doctor.sh"
   # shellcheck source=lib/update.sh
   source "${SCRIPT_DIR}/lib/update.sh"
 
@@ -124,6 +128,13 @@ run_create_dump_stage() {
 run_current_revision_stage() {
   local previous_bot_running="false"
   local revision
+
+  if [[ -f "${context_dir}/before-revision" ]]; then
+    revision="$(current_alembic_revision)"
+    [[ -n "${revision}" ]]
+    printf '%s\n' "${revision}"
+    return 0
+  fi
 
   [[ ! -f "${marker_file}" ]]
   if compose_cmd ps --status running --services 2>/dev/null | grep -Fxq bot; then

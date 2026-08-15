@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 from pathlib import Path, PurePosixPath
+import re
 import secrets
 import shutil
 import tarfile
@@ -22,6 +23,13 @@ MAX_CONTROL_FILE_BYTES = 32 * 1024 * 1024
 
 class RecoveryError(ValueError):
     pass
+
+
+def _compose_project_name(project_root: Path) -> str:
+    slug = re.sub(r"[^a-z0-9_-]+", "-", project_root.name.lower()).strip("-_")
+    slug = (slug or "stack")[:32]
+    digest = hashlib.sha256(str(project_root).encode("utf-8")).hexdigest()[:8]
+    return f"bedolaga-{slug}-{digest}"
 
 
 @dataclass(frozen=True)
@@ -145,6 +153,7 @@ def _validate_state_paths(content: bytes, project_root: Path) -> None:
     if state.get("PROJECT_ROOT") != str(project_root):
         raise RecoveryError("file backup state belongs to another project root")
 
+    expected_compose_project = _compose_project_name(project_root)
     expected_paths = {
         "REPOS_DIR": project_root / "repos",
         "RUNTIME_DIR": project_root / "runtime",
@@ -162,12 +171,14 @@ def _validate_state_paths(content: bytes, project_root: Path) -> None:
         "CABINET_ENV_FILE": project_root / "state/cabinet.env",
         "COMPOSE_FILE": project_root / "state/docker-compose.yml",
         "CADDY_CANDIDATE_FILE": project_root / "state/bot-stack.caddy",
-        "CADDY_SNIPPET_DIR": Path("/etc/caddy/conf.d"),
-        "CADDY_SNIPPET_FILE": Path("/etc/caddy/conf.d/bot-stack.caddy"),
+        "CADDY_SNIPPET_DIR": "/etc/caddy/conf.d",
+        "CADDY_SNIPPET_FILE": f"/etc/caddy/conf.d/{expected_compose_project}.caddy",
     }
     for key, expected_path in expected_paths.items():
         if key in state and state[key] != str(expected_path):
             raise RecoveryError(f"file backup install.state has unsafe {key}")
+    if state.get("COMPOSE_PROJECT_NAME", expected_compose_project) != expected_compose_project:
+        raise RecoveryError("file backup install.state has unsafe COMPOSE_PROJECT_NAME")
 
 
 def validate_file_backup(

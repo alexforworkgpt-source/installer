@@ -23,7 +23,7 @@ stop_compose_stack() {
 remove_caddy_installation() {
   if [[ -f "${CADDY_SNIPPET_FILE}" ]]; then
     rm -f "${CADDY_SNIPPET_FILE}"
-    reload_caddy || true
+    reload_caddy skip-public-postcheck || true
   fi
 }
 
@@ -60,11 +60,12 @@ uninstall_stack_and_runtime() {
   delete_telegram_webhook_if_requested
   stop_compose_stack -v
   remove_caddy_installation
+  log_info "Удаление stack и runtime-data подтверждено; завершаю очистку project state."
   safe_rm_rf_under "${PROJECT_ROOT}" "${RUNTIME_DIR}"
   safe_rm_rf_under "${PROJECT_ROOT}" "${STATE_DIR}"
   safe_rm_rf_under "${PROJECT_ROOT}" "${RELEASES_DIR}"
   rm -f "${LEGACY_STATE_FILE}"
-  log_info "Стек и runtime-данные удалены. Installer сохранён."
+  printf '[INFO] %s\n' "Стек и runtime-данные удалены. Installer сохранён."
 }
 
 full_uninstall_keep_installer() {
@@ -79,9 +80,28 @@ full_uninstall_keep_installer() {
   delete_telegram_webhook_if_requested
   stop_compose_stack -v
   remove_caddy_installation
+  log_info "Полное удаление подтверждено; завершаю очистку project root."
   rm -rf "${PROJECT_ROOT}"
   rm -f "${STATE_FILE}" "${LEGACY_STATE_FILE}"
-  log_info "Полное удаление выполнено. Installer сохранён."
+  printf '[INFO] %s\n' "Полное удаление выполнено. Installer сохранён."
+}
+
+remove_installer_tooling() {
+  local installer_home="${DEFAULT_INSTALLER_HOME}"
+  local launcher_path="${DEFAULT_MENU_LAUNCHER_PATH}"
+
+  ensure_root
+  [[ "${installer_home}" == /opt/* || "${installer_home}" == /usr/local/* || "${installer_home}" == /tmp/* ]] \
+    || die "Каталог installer выглядит небезопасно для удаления: ${installer_home}"
+
+  log_warn "Будут отдельно удалены management launcher и установленная копия installer."
+  prompt_typed_confirmation "REMOVE_INSTALLER" "Подтверждение." || return 1
+
+  rm -f "${launcher_path}"
+  if [[ -e "${installer_home}" ]]; then
+    safe_rm_rf_under "$(dirname "${installer_home}")" "${installer_home}"
+  fi
+  log_info "Management launcher и установленная копия installer удалены."
 }
 
 uninstall_menu() {
@@ -95,19 +115,21 @@ uninstall_menu() {
     print_menu_item "1" "Удалить только стек" "Остановит и удалит контейнеры, но оставит данные и конфиги."
     print_menu_item "2" "Удалить стек и runtime-данные" "Удалит контейнеры, volumes, runtime и сгенерированные файлы."
     print_menu_item "3" "Полное удаление установки" "Удалит весь развёрнутый проект, кроме каталога installer."
+    print_menu_item "4" "Удалить installer" "Отдельно удалит management launcher и установленную копию."
     echo
     print_menu_section "Навигация"
-    print_menu_item "4" "Назад"
+    print_menu_item "5" "Назад"
     echo
 
-    read_menu_choice "Выберите пункт [1-4]: " choice
+    read_menu_choice "Выберите пункт [1-5]: " choice
     echo
 
     case "${choice}" in
       1) uninstall_stack_only ;;
       2) uninstall_stack_and_runtime ;;
       3) full_uninstall_keep_installer ;;
-      4) return 0 ;;
+      4) remove_installer_tooling ;;
+      5) return 0 ;;
       *) log_warn "Неизвестный пункт: ${choice}" ;;
     esac
 

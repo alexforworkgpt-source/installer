@@ -12,6 +12,13 @@
 - file backups: `<PROJECT_ROOT>/state/backups/`
 - быстрые точки: `<PROJECT_ROOT>/state/snapshots/`
 - резервные копии UFW: `<PROJECT_ROOT>/state/firewall-backups/`
+- стабильная management-копия: `/opt/bedolaga-installer/current/`
+- launcher: `/usr/local/bin/vpn` (`sudo vpn`)
+
+Compose project name имеет вид `bedolaga-<basename>-<hash PROJECT_ROOT>`.
+Контейнеры и volumes выбираются по Compose labels, поэтому разные `PROJECT_ROOT`
+не используют глобальные имена и могут сосуществовать. Bot работает как
+`1000:1000`; writable каталоги `data`, `logs`, `uploads` принадлежат этому UID.
 
 File backup не содержит PostgreSQL, Redis, Git-репозитории или Docker-образы.
 Для переноса установки и disaster recovery используйте migration package из
@@ -230,6 +237,10 @@ process arguments; context удаляется после committed/rolled-back �
 ## Caddy и домены
 
 - `Обслуживание -> Домены и Caddy -> Пересоздать конфиг Caddy`
+- основной snippet называется по Compose project и не конфликтует с другим stack
+- webhook host разрешает только `/webhook` и `/remnawave-webhook`; fallback — `404`
+- candidate активируется через validation, reload и строгий public TLS post-check;
+  при ошибке предыдущий snippet возвращается и reload повторяется
 - лендинги хранятся в отдельных `conf.d/landing-*.caddy` и не затираются при регенерации основного конфига
 
 ## Telegram webhook
@@ -238,3 +249,27 @@ process arguments; context удаляется после committed/rolled-back �
 
 Использовать после смены домена, токена или если Telegram смотрит на старый URL.
 Ожидающие Telegram-события при обновлении webhook по умолчанию не сбрасываются.
+
+## Удаление
+
+- обычные варианты удаления работают только с выбранным Compose project
+- `Полное удаление установки` удаляет stack/project, но сохраняет `sudo vpn` и
+  установленную management/recovery-копию
+- отдельное удаление installer требует точного подтверждения `REMOVE_INSTALLER`
+- удаление первоначального source clone не ломает launcher
+
+## Release lifecycle gate
+
+Перед публикацией installer Release на disposable Ubuntu 24.04 запускается:
+
+```bash
+python3 tests/integration/run-remote.py run --confirm-disposable-server
+python3 tests/integration/run-remote.py final-postflight --confirm-disposable-server
+```
+
+Gate проверяет clean preflight, minimal fresh/repeat install, legacy fixture,
+settings draft/apply, protected update, injected verified rollback, file recovery,
+non-root writes, второй Compose project и uninstall. Publication workflow требует
+input `lifecycle_proof=ubuntu-24.04-passed`; без реально завершённого gate его
+указывать нельзя. Диагностические файлы остаются private и не должны содержать
+credentials.

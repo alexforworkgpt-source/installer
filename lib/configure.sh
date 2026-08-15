@@ -109,7 +109,7 @@ collect_configuration() {
   APP_NAME="${APP_NAME:-${DEFAULT_APP_NAME}}"
   APP_LOGO="${APP_LOGO:-${DEFAULT_APP_LOGO}}"
 
-  BOT_HTTP_PORT="8080"
+  BOT_HTTP_PORT="${BOT_HTTP_PORT:-8080}"
 
   WEBHOOK_SECRET_TOKEN="${WEBHOOK_SECRET_TOKEN:-$(generate_hex_secret 64)}"
   WEB_API_DEFAULT_TOKEN="${WEB_API_DEFAULT_TOKEN:-$(generate_hex_secret 64)}"

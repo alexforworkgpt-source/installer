@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import hashlib
 import re
 import sys
 
@@ -25,6 +26,7 @@ STATE_KEYS = [
     "BOT_OVERRIDE_ENV_FILE",
     "CABINET_ENV_FILE",
     "COMPOSE_FILE",
+    "COMPOSE_PROJECT_NAME",
     "CADDY_CANDIDATE_FILE",
     "CADDY_SNIPPET_DIR",
     "CADDY_SNIPPET_FILE",
@@ -70,6 +72,13 @@ STATE_KEYS = [
     "LAST_RELEASE_BUNDLE_IDENTITY",
     "LAST_CABINET_ARTIFACT_SHA256",
 ]
+
+
+def compose_project_name(project_root: Path) -> str:
+    slug = re.sub(r"[^a-z0-9_-]+", "-", project_root.name.lower()).strip("-_")
+    slug = (slug or "stack")[:32]
+    digest = hashlib.sha256(str(project_root).encode("utf-8")).hexdigest()[:8]
+    return f"bedolaga-{slug}-{digest}"
 
 
 def parse_env(path: Path | None) -> dict[str, str]:
@@ -202,6 +211,7 @@ def cmd_restore_state(argv: list[str]) -> int:
     webhook_url = bot.get("WEBHOOK_URL", "")
     cabinet_url = bot.get("CABINET_URL", "")
 
+    compose_project = compose_project_name(project_root)
     state = {
         "PROJECT_ROOT": str(project_root),
         "REPOS_DIR": str(project_root / "repos"),
@@ -221,9 +231,10 @@ def cmd_restore_state(argv: list[str]) -> int:
         "BOT_OVERRIDE_ENV_FILE": str(project_root / "state" / "bot.override.env"),
         "CABINET_ENV_FILE": str(project_root / "state" / "cabinet.env"),
         "COMPOSE_FILE": str(project_root / "state" / "docker-compose.yml"),
+        "COMPOSE_PROJECT_NAME": compose_project,
         "CADDY_CANDIDATE_FILE": str(project_root / "state" / "bot-stack.caddy"),
         "CADDY_SNIPPET_DIR": "/etc/caddy/conf.d",
-        "CADDY_SNIPPET_FILE": "/etc/caddy/conf.d/bot-stack.caddy",
+        "CADDY_SNIPPET_FILE": f"/etc/caddy/conf.d/{compose_project}.caddy",
         "HOOK_DOMAIN": derive_domain(webhook_url),
         "APP_DOMAIN": derive_domain(cabinet_url),
         "WEBHOOK_URL": webhook_url,

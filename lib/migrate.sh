@@ -53,25 +53,24 @@ migration_remove_project_stack() {
   local compose_file="${project_root}/state/docker-compose.yml"
   local override_file="${project_root}/state/migration-image.override.yml"
   local resource_marker="${project_root}/.migration-resources-created"
+  local compose_project
   local compose_args=()
   local resource_name
 
   is_safe_project_root "${project_root}" || die "Небезопасный путь очистки: ${project_root}"
+  compose_project="$(compose_project_name_for_root "${project_root}")"
   if [[ -f "${resource_marker}" ]]; then
     [[ -f "${compose_file}" && -f "${override_file}" ]] \
       || { log_error "Не хватает compose-файлов для безопасной очистки ${project_root}."; return 1; }
     compose_args=(-f "${compose_file}")
     compose_args+=(-f "${override_file}")
-    docker compose "${compose_args[@]}" down -v \
+    docker compose --project-name "${compose_project}" "${compose_args[@]}" down -v \
       || { log_error "Docker не подтвердил удаление ресурсов миграции."; return 1; }
 
-    while IFS= read -r resource_name; do
-      [[ -n "${resource_name}" ]] || continue
-      if docker container inspect "${resource_name}" >/dev/null 2>&1; then
-        log_error "Контейнер миграции не удален: ${resource_name}"
-        return 1
-      fi
-    done < <(awk -F= '$1 == "container" {sub(/^[^=]*=/, ""); print}' "${resource_marker}")
+    if [[ -n "$(docker ps -aq --filter "label=com.docker.compose.project=${compose_project}")" ]]; then
+      log_error "Контейнеры Compose project ${compose_project} не удалены."
+      return 1
+    fi
     while IFS= read -r resource_name; do
       [[ -n "${resource_name}" ]] || continue
       if docker volume inspect "${resource_name}" >/dev/null 2>&1; then
@@ -90,7 +89,7 @@ migration_remove_recorded_caddy() {
 
   [[ -f "${marker_file}" ]] || return 0
   while IFS= read -r caddy_path; do
-    [[ "${caddy_path}" == "${snippet_dir}/bot-stack.caddy" || "${caddy_path}" == "${snippet_dir}/landing-"*.caddy ]] \
+    [[ "${caddy_path}" == "${snippet_dir}/bedolaga-"*.caddy || "${caddy_path}" == "${snippet_dir}/landing-"*.caddy ]] \
       || continue
     rm -f "${caddy_path}"
   done < <(awk -F= '$1 == "caddy_file" {sub(/^[^=]*=/, ""); print}' "${marker_file}")
@@ -110,7 +109,7 @@ migration_domain_points_here() {
 migration_local_caddy_status() {
   local domain="$1"
   local path="$2"
-  curl_with_timeouts -ksS \
+  curl_with_timeouts -sS \
     --resolve "${domain}:443:127.0.0.1" \
     -o /dev/null -w '%{http_code}' \
     "https://${domain}${path}" 2>/dev/null || true
@@ -125,10 +124,11 @@ recover_pending_migration_bot() {
   command_exists docker || return 0
 
   docker compose \
+    --project-name "${COMPOSE_PROJECT_NAME}" \
     -f "${COMPOSE_FILE}" \
     -f "${STATE_DIR}/migration-image.override.yml" \
     stop bot >/dev/null 2>&1 || true
-  if docker container inspect botstack_bot --format '{{.State.Running}}' 2>/dev/null | grep -Fxq true; then
+  if migration_service_is_running bot; then
     log_error "Не удалось остановить бота незавершенной миграции."
     return 1
   fi
@@ -145,9 +145,11 @@ recover_completed_migration_restart() {
   if grep -Fq 'restart: "no"' "${STATE_DIR}/migration-image.override.yml"; then
     sed -i 's/restart: "no"/restart: unless-stopped/' "${STATE_DIR}/migration-image.override.yml"
   fi
-  if command_exists docker && docker container inspect botstack_bot >/dev/null 2>&1; then
-    docker update --restart unless-stopped botstack_bot >/dev/null \
-      || log_warn "Не удалось включить автозапуск botstack_bot."
+  local bot_container
+  bot_container="$(migration_service_container bot)"
+  if command_exists docker && [[ -n "${bot_container}" ]]; then
+    docker update --restart unless-stopped "${bot_container}" >/dev/null \
+      || log_warn "Не удалось включить автозапуск Bot container."
   fi
 }
 
@@ -401,7 +403,6 @@ import_migration_archive() {
   local copied_caddy_paths=()
   local compose_project
   local expected_volume
-  local container_name
   local in_progress_marker
   local resource_marker
   local pending_temp
@@ -509,7 +510,7 @@ import_migration_archive() {
   reset_project_root_paths
   set_runtime_paths
   CADDY_SNIPPET_DIR="/etc/caddy/conf.d"
-  CADDY_SNIPPET_FILE="${CADDY_SNIPPET_DIR}/bot-stack.caddy"
+  CADDY_SNIPPET_FILE="${CADDY_SNIPPET_DIR}/${COMPOSE_PROJECT_NAME}.caddy"
   STATE_FILE="${STATE_DIR}/install.state"
 
   restored_bot_commit="$(migration_repo_commit "${BOT_REPO_DIR}")"
@@ -535,12 +536,10 @@ import_migration_archive() {
     done < <(find "${extract_dir}/project/caddy" -maxdepth 1 -type f -name 'landing-*.caddy' -print0)
   fi
 
-  compose_project="bedolaga-${bot_commit:0:12}"
-  for container_name in botstack_bot botstack_postgres botstack_redis; do
-    if docker container inspect "${container_name}" >/dev/null 2>&1; then
-      die "Контейнер ${container_name} уже существует. Импорт разрешен только на чистый Docker host."
-    fi
-  done
+  compose_project="${COMPOSE_PROJECT_NAME}"
+  if [[ -n "$(docker ps -aq --filter "label=com.docker.compose.project=${compose_project}")" ]]; then
+    die "Compose project ${compose_project} уже существует. Импорт разрешен только на чистый target project."
+  fi
   for expected_volume in "${compose_project}_postgres_data" "${compose_project}_redis_data"; do
     if docker volume inspect "${expected_volume}" >/dev/null 2>&1; then
       die "Docker volume ${expected_volume} уже существует. Удалите остатки предыдущей попытки через меню переноса."
@@ -556,7 +555,6 @@ import_migration_archive() {
 
   override_file="${STATE_DIR}/migration-image.override.yml"
   cat > "${override_file}" <<EOF
-name: "${compose_project}"
 services:
   postgres:
     image: "${postgres_image_tag}"
@@ -571,9 +569,6 @@ EOF
 
   cat > "${resource_marker}" <<EOF
 compose_project=${compose_project}
-container=botstack_bot
-container=botstack_postgres
-container=botstack_redis
 volume=${compose_project}_postgres_data
 volume=${compose_project}_redis_data
 EOF
@@ -679,8 +674,8 @@ activate_migrated_stack() {
   reload_caddy
   compose_cmd up -d --no-build --wait --wait-timeout 180
   app_local_status="$(migration_local_caddy_status "${APP_DOMAIN}" "/")"
-  hook_local_status="$(migration_local_caddy_status "${HOOK_DOMAIN}" "/cabinet/branding")"
-  [[ "${app_local_status}" == "200" && "${hook_local_status}" == "200" ]] \
+  hook_local_status="$(migration_local_caddy_status "${HOOK_DOMAIN}" "/")"
+  [[ "${app_local_status}" == "200" && "${hook_local_status}" == "404" ]] \
     || die "Новая VPS не прошла локальную проверку Caddy: app=${app_local_status:-n/a}, hook=${hook_local_status:-n/a}."
   apply_telegram_runtime_mode
   finalize_runtime_change "Перенесенный проект активирован."

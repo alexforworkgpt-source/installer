@@ -336,7 +336,9 @@ verify_private_runtime_ports() {
   local bot_port="${BOT_HTTP_PORT:-${DEFAULT_BOT_HTTP_PORT:-8080}}"
   local published_ports
   local binding
-  local container_name
+  local container_id
+  local service_name
+  local service_containers
 
   host_port_has_no_public_listener "${bot_port}" || return 1
   host_port_has_no_public_listener 5432 || return 1
@@ -344,20 +346,24 @@ verify_private_runtime_ports() {
 
   command_exists docker || return 1
   docker info >/dev/null 2>&1 || return 1
-  if docker container inspect botstack_bot >/dev/null 2>&1; then
-    published_ports="$(docker port botstack_bot 2>/dev/null)" || return 1
+  service_containers="$(compose_cmd ps -q bot 2>/dev/null)" || return 1
+  while IFS= read -r container_id; do
+    [[ -n "${container_id}" ]] || continue
+    published_ports="$(docker port "${container_id}" 2>/dev/null)" || return 1
     [[ -n "${published_ports}" ]] || return 1
     while IFS= read -r binding; do
       [[ "${binding}" == "8080/tcp -> 127.0.0.1:${bot_port}" \
         || "${binding}" == "8080/tcp -> [::1]:${bot_port}" ]] \
         || return 1
     done <<<"${published_ports}"
-  fi
+  done <<<"${service_containers}"
 
-  for container_name in botstack_postgres botstack_redis; do
-    if docker container inspect "${container_name}" >/dev/null 2>&1; then
-      published_ports="$(docker port "${container_name}" 2>/dev/null)" || return 1
+  for service_name in postgres redis; do
+    service_containers="$(compose_cmd ps -q "${service_name}" 2>/dev/null)" || return 1
+    while IFS= read -r container_id; do
+      [[ -n "${container_id}" ]] || continue
+      published_ports="$(docker port "${container_id}" 2>/dev/null)" || return 1
       [[ -z "${published_ports}" ]] || return 1
-    fi
+    done <<<"${service_containers}"
   done
 }

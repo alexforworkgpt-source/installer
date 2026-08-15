@@ -22,20 +22,39 @@ server_preflight_checks() {
   echo "Проверка готовности сервера"
   echo "--------------------------"
   run_check "Поддерживаемая ОС" assert_supported_os || ((failures++))
-  run_check "Доступен curl" command_exists curl || ((failures++))
-  run_check "Доступен git" command_exists git || ((failures++))
-  run_check "Доступен jq" command_exists jq || ((failures++))
-  run_check "Доступен Python 3" python_cmd || ((failures++))
-  run_check "Доступен Docker" command_exists docker || ((failures++))
-  run_check "Доступен Docker Compose" require_docker_compose || ((failures++))
-  run_check "Доступен Caddy" command_exists caddy || ((failures++))
+  run_check "Достаточно CPU, RAM и диска" check_bootstrap_resources || ((failures++))
   run_check "Порты 80/443 свободны или заняты Caddy" check_ports_available_or_caddy_only || ((failures++))
+  run_check "Доступны DNS и внешний HTTPS" check_required_external_connectivity || ((failures++))
 
   if ((failures > 0)); then
     die "Проверка готовности сервера завершилась с ошибками: ${failures}"
   fi
 
   log_info "Сервер готов к установке."
+}
+
+check_bootstrap_resources() {
+  local memory_kb
+  local available_kb
+  local cpu_count
+
+  memory_kb="$(awk '/MemTotal/ {print $2; exit}' /proc/meminfo 2>/dev/null)"
+  available_kb="$(df -Pk / 2>/dev/null | awk 'NR == 2 {print $4}')"
+  cpu_count="$(getconf _NPROCESSORS_ONLN 2>/dev/null || printf '0')"
+
+  [[ "${memory_kb}" =~ ^[0-9]+$ && "${available_kb}" =~ ^[0-9]+$ && "${cpu_count}" =~ ^[0-9]+$ ]] || return 1
+  ((memory_kb >= 1500000 && available_kb >= 3145728 && cpu_count >= 1))
+}
+
+check_required_external_connectivity() {
+  local host
+
+  command -v getent >/dev/null 2>&1 || return 1
+  command -v timeout >/dev/null 2>&1 || return 1
+  for host in github.com api.github.com api.telegram.org; do
+    getent hosts "${host}" >/dev/null 2>&1 || return 1
+    timeout 8 bash -c "exec 3<>/dev/tcp/${host}/443" >/dev/null 2>&1 || return 1
+  done
 }
 
 env_check() {
@@ -76,7 +95,7 @@ ssl_check() {
   run_check "Резолвится домен app" getent hosts "${APP_DOMAIN}" || ((failures++))
   run_check "Webhook указывает на этот VPS" domain_points_to_local_machine "${HOOK_DOMAIN}" || ((failures++))
   run_check "App указывает на этот VPS" domain_points_to_local_machine "${APP_DOMAIN}" || ((failures++))
-  run_check "HTTPS доступен для webhook" check_http_ok "https://${HOOK_DOMAIN}/cabinet/branding" || ((failures++))
+  run_check "Webhook TLS и default deny" check_http_status "https://${HOOK_DOMAIN}/" "404" || ((failures++))
   run_check "HTTPS доступен для app" check_http_ok "https://${APP_DOMAIN}/" || ((failures++))
 
   echo
@@ -101,31 +120,64 @@ check_nonempty_env_value() {
 
 check_http_ok() {
   local url="$1"
-  local status
-  status="$(curl_with_timeouts -ksS -o /dev/null -w "%{http_code}" "${url}" 2>/dev/null || true)"
-  [[ "${status}" == "200" ]]
+  check_http_status "${url}" "200"
 }
 
-check_remnawave_endpoint() {
-  local base_url
-  local candidate
+check_http_status() {
+  local url="$1"
+  local expected="$2"
   local status
-  local candidates=()
 
-  base_url="$(normalize_url "${REMNAWAVE_API_URL}")"
-  candidates+=("${base_url}")
-
-  case "${base_url}" in
-    */remnawave-webhook) ;;
-    *) candidates+=("${base_url}/remnawave-webhook") ;;
+  case "${url}" in
+    https://*) status="$(public_https_status "${url}" || true)" ;;
+    *) status="$(curl_with_timeouts -sS -o /dev/null -w "%{http_code}" "${url}" 2>/dev/null || true)" ;;
   esac
+  [[ "${status}" == "${expected}" ]]
+}
 
-  for candidate in "${candidates[@]}"; do
-    status="$(curl_with_timeouts -ksS -o /dev/null -w "%{http_code}" "${candidate}" 2>/dev/null || true)"
-    [[ "${status}" == "200" ]] && return 0
-  done
+check_remnawave_api_connectivity() {
+  compose_cmd exec -T bot python - <<'PY' >/dev/null
+import asyncio
 
-  return 1
+from app.services.remnawave_service import RemnaWaveService
+
+result = asyncio.run(RemnaWaveService().test_api_connection())
+raise SystemExit(0 if result.get("status") == "connected" else 1)
+PY
+}
+
+check_remnawave_webhook_runtime() {
+  local local_health
+  local public_health
+
+  local_health="$(curl_with_timeouts -fsS "http://127.0.0.1:${BOT_HTTP_PORT}/health/unified")" || return 1
+  jq -e \
+    '.status == "ok"
+     and .remnawave_webhook.enabled == true
+     and .remnawave_webhook.path == "/remnawave-webhook"' \
+    >/dev/null <<<"${local_health}" || return 1
+  public_health="$(curl_with_timeouts -fsS "https://${HOOK_DOMAIN}/remnawave-webhook")" || return 1
+  jq -e \
+    '.status == "ok"
+     and .service == "remnawave_webhook"
+     and .enabled == true' \
+    >/dev/null <<<"${public_health}"
+}
+
+check_cabinet_runtime_contract() {
+  local branding
+  local unified
+
+  branding="$(curl_with_timeouts -fsS "https://${APP_DOMAIN}/api/cabinet/branding")" || return 1
+  unified="$(curl_with_timeouts -fsS "http://127.0.0.1:${BOT_HTTP_PORT}/health/unified")" || return 1
+  jq -e 'type == "object"' >/dev/null <<<"${branding}" || return 1
+  jq -e \
+    '.status == "ok"
+     and .web_api_enabled == true' \
+    >/dev/null <<<"${unified}" || return 1
+  [[ "${CABINET_VERSION_REF:-}" =~ ^[0-9a-f]{40}$ ]] || return 1
+  [[ "${CURRENT_RELEASE_BUNDLE_IDENTITY:-}" =~ ^[0-9a-f]{64}$ ]] || return 1
+  [[ "${CURRENT_CABINET_ARTIFACT_SHA256:-}" =~ ^[0-9a-f]{64}$ ]]
 }
 
 check_telegram_webhook_matches() {
@@ -161,12 +213,14 @@ doctor_stack() {
   run_check "Сервис redis запущен" compose_service_running "redis" || ((failures++))
   run_check "Webhook указывает на этот VPS" domain_points_to_local_machine "${HOOK_DOMAIN}" || ((failures++))
   run_check "App указывает на этот VPS" domain_points_to_local_machine "${APP_DOMAIN}" || ((failures++))
-  run_check "Локальный API cabinet" check_http_ok "http://127.0.0.1:${BOT_HTTP_PORT}/cabinet/branding" || ((failures++))
-  run_check "API через webhook-домен" check_http_ok "https://${HOOK_DOMAIN}/cabinet/branding" || ((failures++))
+  run_check "Cabinet runtime contract" check_cabinet_runtime_contract || ((failures++))
+  run_check "Webhook TLS и default deny" check_http_status "https://${HOOK_DOMAIN}/" "404" || ((failures++))
   run_check "API через app-домен" check_http_ok "https://${APP_DOMAIN}/api/cabinet/branding" || ((failures++))
   run_check "Домен cabinet открывается" check_http_ok "https://${APP_DOMAIN}/" || ((failures++))
-  if ! run_check "Endpoint Remnawave доступен" check_remnawave_endpoint; then
-    log_warn "Remnawave endpoint недоступен для curl-проверки, но это не блокирует работу стека."
+  run_check "Remnawave API доступен из Bot" check_remnawave_api_connectivity || ((failures++))
+  run_check "Remnawave webhook включён" check_remnawave_webhook_runtime || ((failures++))
+  if [[ ! -f "${STATE_DIR}/remnawave-initial-sync-confirmed" ]]; then
+    log_warn "Outstanding setup action: запустите initial synchronization Remnawave из admin UI и подтвердите результат; API и webhook уже проверены."
   fi
   run_check "Включены cabinet routes" check_required_env_value "CABINET_ENABLED" "true" || ((failures++))
   run_check "Включен Web API" check_required_env_value "WEB_API_ENABLED" "true" || ((failures++))

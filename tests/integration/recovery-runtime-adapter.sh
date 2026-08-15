@@ -47,6 +47,14 @@ cat > "${FAKE_BIN}/docker" <<'EOF'
 set -Eeuo pipefail
 case "${1:-}" in
   info) exit 0 ;;
+  ps)
+    if [[ "$*" == *'-aq'* ]]; then
+      printf '%s\n' bot-container-id
+    elif [[ "$*" == *'-q'* && "$(<"${RECOVERY_FAKE_STATE}/bot")" == running ]]; then
+      printf '%s\n' bot-container-id
+    fi
+    exit 0
+    ;;
   stop)
     printf '%s\n' 'stopped' > "${RECOVERY_FAKE_STATE}/bot"
     exit 0
@@ -60,8 +68,8 @@ case "${1:-}" in
     ;;
   port)
     case "${2:-}" in
-      botstack_bot) printf '%s\n' '8080/tcp -> 127.0.0.1:8080' ;;
-      botstack_postgres|botstack_redis) : ;;
+      bot-container-id) printf '%s\n' '8080/tcp -> 127.0.0.1:8080' ;;
+      postgres-container-id|redis-container-id) : ;;
       *) exit 1 ;;
     esac
     exit 0
@@ -72,7 +80,14 @@ case "${1:-}" in
     elif [[ "$*" == *' up '* ]]; then
       printf '%s\n' 'running' > "${RECOVERY_FAKE_STATE}/bot"
     elif [[ "$*" == *' ps --status running --services'* ]]; then
-      printf '%s\n' postgres redis bot
+      printf '%s\n' postgres redis
+      [[ "$(<"${RECOVERY_FAKE_STATE}/bot")" != running ]] || printf '%s\n' bot
+    elif [[ "$*" == *' ps -q bot'* ]]; then
+      printf '%s\n' bot-container-id
+    elif [[ "$*" == *' ps -q postgres'* ]]; then
+      printf '%s\n' postgres-container-id
+    elif [[ "$*" == *' ps -q redis'* ]]; then
+      printf '%s\n' redis-container-id
     elif [[ "$*" == *' exec -T redis redis-cli ping'* ]]; then
       printf '%s\n' PONG
     fi
@@ -101,7 +116,13 @@ cat > "${FAKE_BIN}/curl" <<'EOF'
 #!/usr/bin/env bash
 set -Eeuo pipefail
 if [[ "$*" == *'%{http_code}'* ]]; then
-  printf '%s' '200'
+  [[ "$*" == *'hooks.example.test/'* ]] && printf '%s' '404' || printf '%s' '200'
+elif [[ "$*" == *'/health/unified'* ]]; then
+  printf '%s\n' '{"status":"ok","web_api_enabled":true,"miniapp_static":{"mounted":true,"path":"/cabinet"},"remnawave_webhook":{"enabled":true,"path":"/remnawave-webhook"}}'
+elif [[ "$*" == *'/remnawave-webhook'* ]]; then
+  printf '%s\n' '{"status":"ok","service":"remnawave_webhook","enabled":true}'
+elif [[ "$*" == *'/branding'* ]]; then
+  printf '%s\n' '{}'
 elif [[ "$*" == *'getWebhookInfo'* ]]; then
   printf '%s\n' '{"ok":true,"result":{"url":"https://hooks.example.test/webhook"}}'
 else

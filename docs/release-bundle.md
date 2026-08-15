@@ -44,6 +44,9 @@ Cabinet, создаёт deterministic archive и manifest через production 
 Node builder и Nginx runtime для сборки artifact задаются только immutable image
 digests; pipeline выполняет две сборки и сравнивает архивы byte-for-byte, а точные
 builder identities сохраняет в `release-provenance.json`.
+До публикации workflow требует явную аттестацию
+`lifecycle_proof=ubuntu-24.04-passed`. Её разрешено задавать только после полного
+disposable Ubuntu lifecycle gate из `RUNBOOK.md`.
 
 ## Совместимость
 

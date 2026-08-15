@@ -361,6 +361,30 @@ class RecoveryTests(unittest.TestCase):
             with self.assertRaisesRegex(RecoveryError, "BOT_DATA_DIR"):
                 validate_file_backup(archive, project_root)
 
+    def test_validation_accepts_the_project_scoped_caddy_snippet(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            project_root = root / "project"
+            digest = hashlib.sha256(str(project_root).encode("utf-8")).hexdigest()[:8]
+            compose_project = f"bedolaga-project-{digest}"
+            archive = root / "project-caddy-file-backup.tar.gz"
+            create_file_backup_fixture(
+                archive,
+                project_root,
+                {
+                    "project/state/install.state": (
+                        f"PROJECT_ROOT={project_root}\n"
+                        f"COMPOSE_PROJECT_NAME={compose_project}\n"
+                        "CADDY_SNIPPET_DIR=/etc/caddy/conf.d\n"
+                        f"CADDY_SNIPPET_FILE=/etc/caddy/conf.d/{compose_project}.caddy\n"
+                    ).encode(),
+                },
+            )
+
+            artifact = validate_file_backup(archive, project_root)
+
+            self.assertEqual(artifact.project_root, project_root)
+
     def test_recovery_invalidates_transient_state_but_keeps_user_override(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

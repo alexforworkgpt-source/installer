@@ -19,6 +19,8 @@ sudo bash bot-menu.sh
 Основное:
 
 - Корень рабочей установки по умолчанию: `/opt/bot-stack`
+- Стабильная установленная копия installer: `/opt/bedolaga-installer/current`
+- Команда обслуживания после первой установки: `sudo vpn`
 - Основной state-файл: `<PROJECT_ROOT>/state/install.state`
 - Лог установщика: `<PROJECT_ROOT>/state/installer.log`
 - File backups без PostgreSQL и Redis: `<PROJECT_ROOT>/state/backups/`
@@ -42,6 +44,10 @@ sudo bash bot-menu.sh
 - Старый широкий `bot.env` автоматически переносится один раз с safety backup в `state/migration-backups/`
 - Deploy, settings apply и PostgreSQL credential rotation используют outcomes `committed`, `rolled back` или `safely stopped`
 - Полная установка автоматически включает UFW для текущего SSH-порта, HTTP, HTTPS и HTTP/3 без сброса существующих правил
+- Bot работает с UID/GID `1000:1000`; writable data, logs и uploads принадлежат этому пользователю
+- Compose project identity вычисляется из полного `PROJECT_ROOT`; глобальные container names не используются
+- Webhook-домен пропускает только `/webhook` и `/remnawave-webhook`, остальные routes отвечают `404`
+- Обычный uninstall сохраняет management/recovery tooling; его удаление требует отдельного `REMOVE_INSTALLER`
 
 Краткий порядок первой установки: [INSTALL.md](INSTALL.md).
 Рабочие сценарии обслуживания: [RUNBOOK.md](RUNBOOK.md).
@@ -67,9 +73,15 @@ bash tests/integration/first-install-pending-state.sh
 bash tests/integration/first-install-runtime-change.sh
 bash tests/integration/settings-runtime-change.sh
 bash tests/integration/release-bundle-shell.sh
+bash tests/integration/runtime-isolation.sh
+bash tests/integration/management-launcher.sh
+bash tests/integration/production-readiness.sh
 ```
 
-Полный smoke требует disposable Ubuntu 24.04, тестовые домены и отдельные credentials:
+Полный lifecycle gate требует disposable Ubuntu 24.04, не менее 1.5 GB RAM и
+3 GB свободного диска, тестовые домены и отдельные credentials. Он выполняет
+fresh/repeat install, settings apply, update, injected rollback, recovery,
+изоляцию двух projects и uninstall:
 
 ```bash
 sudo RUN_INSTALLER_INTEGRATION=1 \
@@ -84,3 +96,7 @@ sudo RUN_INSTALLER_INTEGRATION=1 \
   TEST_REMNAWAVE_WEBHOOK_SECRET=... \
   bash tests/integration/minimal-stack.sh
 ```
+
+Для удалённого тестового VPS используйте `tests/integration/run-remote.py run
+--confirm-disposable-server`. Флаг — обязательное явное подтверждение
+destructive gate и действует только в памяти; private `server.env` не меняется.

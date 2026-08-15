@@ -190,6 +190,13 @@ def activate_cabinet_artifact(
         with tarfile.open(archive_path, "r:gz") as bundle:
             bundle.extractall(candidate, filter="data")
 
+        candidate.chmod(0o755)
+        for extracted_path in candidate.rglob("*"):
+            if extracted_path.is_dir():
+                extracted_path.chmod(0o755)
+            elif extracted_path.is_file():
+                extracted_path.chmod(0o644)
+
         if destination.exists() and not destination.is_dir():
             raise ReleaseBundleError("cabinet destination is not a directory")
 

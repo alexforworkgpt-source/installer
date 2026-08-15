@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import hashlib
 import subprocess
 import sys
 import tempfile
@@ -260,6 +261,13 @@ class InstallationConfigurationTests(unittest.TestCase):
 
             restored = read_env(state_file)
             self.assertFalse(any(key.startswith("HELEKET_") for key in restored))
+            digest = hashlib.sha256(str(project_root).encode("utf-8")).hexdigest()[:8]
+            expected_project = f"bedolaga-{project_root.name.lower()}-{digest}"
+            self.assertEqual(restored["COMPOSE_PROJECT_NAME"], f"'{expected_project}'")
+            self.assertEqual(
+                restored["CADDY_SNIPPET_FILE"],
+                f"'/etc/caddy/conf.d/{expected_project}.caddy'",
+            )
 
     def test_generic_render_rejects_initialized_postgres_identity_change(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import os
 from pathlib import Path
+import hashlib
 import re
 import shlex
 import shutil
@@ -44,6 +45,15 @@ TEST_KEYS = (
 
 class RemoteIntegrationError(RuntimeError):
     pass
+
+
+def apply_disposable_confirmation(
+    config: dict[str, str], *, confirmed: bool
+) -> dict[str, str]:
+    effective = dict(config)
+    if confirmed:
+        effective["SERVER_IS_DISPOSABLE"] = "yes"
+    return effective
 
 
 def require_value(config: dict[str, str], key: str) -> str:
@@ -203,6 +213,14 @@ def remote_environment(config: dict[str, str]) -> bytes:
     return ("\n".join(lines) + "\n").encode("utf-8")
 
 
+def compose_project_name(project_root: str) -> str:
+    root = Path(project_root)
+    slug = re.sub(r"[^a-z0-9_-]+", "-", root.name.lower()).strip("-_")
+    slug = (slug or "stack")[:32]
+    digest = hashlib.sha256(str(root).encode("utf-8")).hexdigest()[:8]
+    return f"bedolaga-{slug}-{digest}"
+
+
 def run_preflight(session: RemoteSession, config: dict[str, str]) -> None:
     project_root = shlex.quote(config["TEST_PROJECT_ROOT"])
     command = f"""
@@ -213,11 +231,16 @@ set -Eeuo pipefail
 [[ ! -e {project_root} ]]
 available_kb="$(df -Pk / | awk 'NR==2 {{print $4}}')"
 memory_kb="$(awk '/MemTotal/ {{print $2}}' /proc/meminfo)"
-[[ "${{available_kb}}" -ge 5242880 ]]
+[[ "${{available_kb}}" -ge 3145728 ]]
 [[ "${{memory_kb}}" -ge 1500000 ]]
 printf 'Ubuntu=%s; free_disk_kb=%s; memory_kb=%s\n' "${{VERSION_ID}}" "${{available_kb}}" "${{memory_kb}}"
 """
-    result = session.run(command, capture_output=True)
+    try:
+        result = session.run(command, capture_output=True)
+    except subprocess.CalledProcessError as error:
+        print((error.stdout or b"").decode("utf-8", errors="replace").strip())
+        print((error.stderr or b"").decode("utf-8", errors="replace").strip(), file=sys.stderr)
+        raise
     print(result.stdout.decode("utf-8", errors="replace").strip())
 
 
@@ -263,23 +286,64 @@ printf 'free_disk_kb=%s\n' "$(df -Pk / | awk 'NR==2 {print $4}')"
     print(result.stdout.decode("utf-8", errors="replace").strip())
 
 
-def run_postflight(session: RemoteSession, config: dict[str, str]) -> None:
+def clean_disposable_host(session: RemoteSession) -> None:
+    command = """
+set -Eeuo pipefail
+docker system prune --all --force --volumes
+apt-get clean
+printf 'free_disk_kb=%s\n' "$(df -Pk / | awk 'NR==2 {print $4}')"
+"""
+    result = session.run(command, capture_output=True, timeout=600)
+    print(result.stdout.decode("utf-8", errors="replace").strip())
+
+
+def run_postflight(
+    session: RemoteSession, config: dict[str, str], *, expect_management: bool = False
+) -> None:
     project_root = shlex.quote(config["TEST_PROJECT_ROOT"])
+    project_name = shlex.quote(compose_project_name(config["TEST_PROJECT_ROOT"]))
+    caddy_file = shlex.quote(
+        f"/etc/caddy/conf.d/{compose_project_name(config['TEST_PROJECT_ROOT'])}.caddy"
+    )
     integration_env = shlex.quote(
         f"{config['SERVER_INSTALLER_DIR']}/.integration.env"
     )
+    management_checks = """
+printf 'management launcher=%s current=%s log=%s\n' \
+  "$(test -x /usr/local/bin/vpn && printf executable || printf missing)" \
+  "$(test -x /opt/bedolaga-installer/current/bot-menu.sh && printf executable || printf missing)" \
+  "$(test -f /opt/bedolaga-installer/lifecycle-last.log && stat -c '%a' /opt/bedolaga-installer/lifecycle-last.log || printf missing)"
+[[ -x /usr/local/bin/vpn ]]
+[[ -x /opt/bedolaga-installer/current/bot-menu.sh ]]
+[[ "$(stat -c '%a' /opt/bedolaga-installer/lifecycle-last.log)" == "600" ]]
+grep -Fxq 'uninstall:stack-removed-management-preserved' /opt/bedolaga-installer/lifecycle-last.log
+""" if expect_management else ""
     command = f"""
 set -Eeuo pipefail
+printf 'cleanup project=%s caddy=%s env=%s containers=%s volumes=%s\n' \
+  "$(test -e {project_root} && printf present || printf absent)" \
+  "$(test -e {caddy_file} && printf present || printf absent)" \
+  "$(test -e {integration_env} && printf present || printf absent)" \
+  "$(docker ps -aq --filter label=com.docker.compose.project={project_name} | wc -l)" \
+  "$(docker volume ls -q --filter label=com.docker.compose.project={project_name} | wc -l)"
+{management_checks}
 [[ ! -e {project_root} ]]
-[[ ! -e /etc/caddy/conf.d/bot-stack.caddy ]]
+[[ ! -e {caddy_file} ]]
 [[ ! -e {integration_env} ]]
-! docker container inspect botstack_bot >/dev/null 2>&1
-! docker container inspect botstack_postgres >/dev/null 2>&1
-! docker container inspect botstack_redis >/dev/null 2>&1
+[[ -z "$(docker ps -aq --filter label=com.docker.compose.project={project_name})" ]]
+[[ -z "$(docker volume ls -q --filter label=com.docker.compose.project={project_name})" ]]
 systemctl is-active --quiet caddy
 printf '%s\n' 'Remote integration cleanup verified.'
 """
-    result = session.run(command, capture_output=True)
+    try:
+        result = session.run(command, capture_output=True)
+    except subprocess.CalledProcessError as error:
+        print((error.stdout or b"").decode("utf-8", errors="replace").strip())
+        print(
+            (error.stderr or b"").decode("utf-8", errors="replace").strip(),
+            file=sys.stderr,
+        )
+        raise
     print(result.stdout.decode("utf-8", errors="replace").strip())
 
 
@@ -315,12 +379,20 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "action",
-        choices=("preflight", "apt-status", "prepare", "postflight", "run"),
+        choices=("preflight", "apt-status", "prepare", "clean", "postflight", "final-postflight", "run"),
     )
     parser.add_argument("--env", default="server.env")
+    parser.add_argument(
+        "--confirm-disposable-server",
+        action="store_true",
+        help="confirm that destructive integration is authorized for this server",
+    )
     arguments = parser.parse_args(argv)
 
-    config = parse_env((WORKSPACE / arguments.env).resolve())
+    config = apply_disposable_confirmation(
+        parse_env((WORKSPACE / arguments.env).resolve()),
+        confirmed=arguments.confirm_disposable_server,
+    )
     validate_config(config)
     if not shutil.which("ssh") or not shutil.which("ssh-keyscan"):
         raise RemoteIntegrationError("OpenSSH client tools are unavailable")
@@ -333,8 +405,14 @@ def main(argv: list[str]) -> int:
             show_package_manager_status(session, config)
         elif arguments.action == "prepare":
             wait_for_package_manager_and_clean(session)
-        elif arguments.action == "postflight":
-            run_postflight(session, config)
+        elif arguments.action == "clean":
+            clean_disposable_host(session)
+        elif arguments.action in {"postflight", "final-postflight"}:
+            run_postflight(
+                session,
+                config,
+                expect_management=arguments.action == "final-postflight",
+            )
         else:
             run_preflight(session, config)
         if arguments.action == "run":
