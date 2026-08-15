@@ -19,8 +19,7 @@ jobs:
           TAG_NAME: v2026.08.1
         run: |
           set -euo pipefail
-          existing="$(gh api "repos/${GH_REPO}/git/ref/tags/${TAG_NAME}" --jq '.object.sha' 2>/dev/null || true)"
-          if [[ -n "$existing" ]]; then
+          if existing="$(gh api "repos/${GH_REPO}/git/ref/tags/${TAG_NAME}" --jq '.object.sha' 2>/dev/null)"; then
             test "$existing" = "$TARGET_SHA"
             exit 0
           fi
