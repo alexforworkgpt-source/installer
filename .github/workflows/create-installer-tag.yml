@@ -1,6 +1,9 @@
 name: Create installer tag
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
