@@ -1,0 +1,8 @@
+state/*
+!state/.gitkeep
+/server.env
+/env.txt
+/architecture-review-verified.png
+__pycache__/
+*.pyc
+.playwright-mcp/
