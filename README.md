@@ -1,7 +1,8 @@
 # Installer
 
 Интерактивная установка и обслуживание Upstream Bot и выбранного Cabinet
-frontend: Custom Cabinet или Upstream Cabinet.
+frontend. По умолчанию Release Bundle собирается из публичного Custom Cabinet;
+legacy Bundle сохраняют точный исторический Upstream Cabinet.
 
 Целевая схема:
 
@@ -28,14 +29,14 @@ sudo bash bot-menu.sh
 - Быстрые точки: `<PROJECT_ROOT>/state/snapshots/`
 - Установщик запоминает последний `PROJECT_ROOT` и использует его при следующем запуске
 - Генерируемые файлы: минимальный `bot.env`, пользовательский `bot.override.env`, `cabinet.env`, `docker-compose.yml`, `bot-stack.caddy`
-- Точные upstream-репозитории по умолчанию хранятся в state
+- Точные Bot/Cabinet repository URL и Git SHA хранятся в state
 - Меню включает установку, обслуживание, обновления, восстановление, домены и Caddy, firewall, резервирование и удаление
 - Отдельный перенос между VPS сохраняет актуальную PostgreSQL, Redis, точные Git SHA и Docker-образы
 - `Резервирование` объединяет быстрые точки и проверяемые file backups
 - File backup содержит встроенные manifest и checksums, но не PostgreSQL и Redis
 - Для другой VPS и disaster recovery используется отдельный migration package
 - При обновлении Telegram webhook ожидающие события по умолчанию не сбрасываются
-- Production-обновление использует проверенный [Release Bundle](docs/release-bundle.md) с точными Git SHA, image digests и Cabinet checksum
+- Production-обновление использует проверенный [Release Bundle](docs/release-bundle.md) с точными repository URL, Git SHA, image digests и Cabinet checksum
 - Первая production-установка также требует Release Bundle и не собирает Cabinet frontend на VPS
 - Базовый `bot.env` содержит только настройки Telegram Bot, PostgreSQL, Redis, Cabinet Mini App, Web API и Remnawave webhooks
 - Пароль PostgreSQL и runtime-секреты генерируются автоматически; известные пароли по умолчанию не используются
@@ -63,13 +64,19 @@ sudo bash bot-menu.sh
 |---|---|
 | Installer | Архив точного tag из публичного Release `installer` |
 | Upstream Bot | Upstream-репозиторий, точный Git SHA; сборка выполняется на VPS |
-| Custom Cabinet или Upstream Cabinet | Готовый `cabinet-dist.tar.gz` из Release `installer` |
+| Custom Cabinet по умолчанию; Upstream Cabinet в legacy Bundle | Готовый `cabinet-dist.tar.gz` из Release `installer` |
 | PostgreSQL и Redis | Docker-образы по неизменяемым `@sha256` digest |
 
 GitHub Actions собирает Cabinet frontend из точного SHA выбранного публичного
-репозитория. Исходники Upstream Bot и Cabinet frontend в Release `installer` не
+GitHub-репозитория. Исходники Upstream Bot и Cabinet frontend в Release `installer` не
 копируются. Новая версия в `main` upstream-репозитория не устанавливается
 автоматически: сначала должен быть опубликован новый проверенный Bundle.
+
+Release Bundle schema v2 фиксирует `cabinet.repository`. Перед применением
+schema v2 Bundle на существующей VPS сначала запустите Installer из архива того
+же или более нового tag. Installer из `v2026.08.3` и старше намеренно отклоняет
+schema v2 до изменения runtime. Порядок обновления описан в
+[RUNBOOK.md](RUNBOOK.md#обновление-installer-перед-schema-v2).
 
 Понятная схема первой установки, обновления и кастомизации Cabinet:
 [docs/release-and-update-flow.md](docs/release-and-update-flow.md).
@@ -93,6 +100,9 @@ bash tests/integration/first-install-pending-state.sh
 bash tests/integration/first-install-runtime-change.sh
 bash tests/integration/settings-runtime-change.sh
 bash tests/integration/release-bundle-shell.sh
+bash tests/integration/postgres-dump-verification.sh
+bash tests/integration/protected-update-adapter.sh
+bash tests/integration/protected-update-recovery.sh
 bash tests/integration/runtime-isolation.sh
 bash tests/integration/management-launcher.sh
 bash tests/integration/production-readiness.sh

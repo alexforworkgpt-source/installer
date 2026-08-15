@@ -98,6 +98,11 @@ workflow. После публикации VPS скачивает необход�
 Поэтому выход новой upstream-версии не меняет VPS автоматически. Сначала
 владелец installer осознанно выпускает новый Bundle с подтверждёнными версиями.
 
+Schema v2 фиксирует Cabinet repository вместе с SHA. На существующей VPS сначала
+запустите Installer из архива того же или более нового tag, чтобы обновить
+management-копию, и только затем применяйте schema v2 `release.json`. Старый
+Installer отклоняет неизвестную schema до изменения runtime.
+
 ## Custom Cabinet
 
 Default source для новых сборок уже настроен на публичный Custom Cabinet:

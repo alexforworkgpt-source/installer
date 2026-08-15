@@ -62,7 +62,7 @@ sudo bash bot-menu.sh
 
 1. проверит сервер
 2. установит базовые host tools, необходимые для проверки release
-3. проверит Release Bundle, точные Bot/Cabinet SHA, image digests и Cabinet artifact
+3. проверит Release Bundle, Bot/Cabinet repository и SHA, image digests и Cabinet artifact
 4. соберёт основные настройки
 5. определит текущий SSH-порт и включит базовый профиль UFW
 6. создаст рабочие конфиги
@@ -79,6 +79,25 @@ sudo bash bot-menu.sh
 после health checks. При обратимой ошибке прежний runtime восстанавливается и
 проверяется; если это невозможно, Bot останавливается, а точный следующий шаг
 сохраняется в `<PROJECT_ROOT>/state/last-runtime-change.json`.
+
+## Обновление существующего Installer
+
+Release Bundle schema v2 впервые используется в `v2026.08.4` и фиксирует
+Cabinet repository вместе с SHA. Installer из `v2026.08.3` и старше намеренно
+отклоняет schema v2 до изменения runtime.
+
+Для существующей установки:
+
+1. скачайте архив Installer нужного tag и его `.sha256` из публичного Release;
+2. проверьте sidecar checksum командой `sha256sum --check`;
+3. распакуйте архив в отдельный каталог вне `PROJECT_ROOT`;
+4. запустите из распакованного каталога `sudo bash bot-menu.sh`;
+5. после обновления management-копии выберите
+   `Обслуживание -> Обновления -> Обновить всё из Release Bundle`.
+
+Не применяйте schema v2 через старую management-копию командой `sudo vpn` и не
+заменяйте `/opt/bedolaga-installer/current` вручную. Новый `bot-menu.sh`
+устанавливает версионированную management-копию автоматически.
 
 Базовый профиль UFW разрешает текущий SSH-порт, `80/tcp`, `443/tcp` и
 `443/udp`, запрещает прочие входящие соединения и оставляет исходящие

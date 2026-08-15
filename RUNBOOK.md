@@ -188,6 +188,26 @@ process arguments; context удаляется после committed/rolled-back �
 - при обновлении обоих компонентов bot и cabinet применяются как одна группа
 - если групповое обновление падает, установщик откатывает оба компонента на предыдущие версии
 
+### Обновление Installer перед schema v2
+
+Schema v2 добавляет `cabinet.repository` в проверяемую identity Release Bundle.
+Installer из `v2026.08.3` и старше не знает это поле и намеренно отклоняет schema
+v2 до runtime mutation. Поэтому существующую установку обновляйте в таком порядке:
+
+1. скачайте `installer-<RELEASE>.tar.gz` и соответствующий `.sha256` из нового
+   публичного Release;
+2. выполните `sha256sum --check installer-<RELEASE>.tar.gz.sha256`;
+3. распакуйте архив в отдельный каталог вне `PROJECT_ROOT`;
+4. запустите из этого каталога `sudo bash bot-menu.sh` — startup автоматически
+   установит версионированную копию в `<INSTALLER_HOME>/current` и обновит
+   launcher `sudo vpn`;
+5. только после этого примените `release.json` через
+   `Обновления -> Обновить всё из Release Bundle`;
+6. проверьте статус, диагностику, Cabinet repository и фактический Git HEAD.
+
+Не копируйте файлы вручную поверх `<INSTALLER_HOME>/current` и не
+применяйте schema v2 старой management-копией.
+
 Формат и процесс публикации описаны в [docs/release-bundle.md](docs/release-bundle.md).
 Понятная схема источников Bot, Cabinet и Installer находится в
 [docs/release-and-update-flow.md](docs/release-and-update-flow.md).
@@ -206,8 +226,8 @@ Cabinet собирается на runner GitHub, а не на локальном
 - выбрать публичный GitHub-репозиторий Cabinet и точный 40-символьный Git SHA;
 - разрешить PostgreSQL, Redis, Node builder и Nginx runtime только в identities
   вида `image@sha256:<64 hex>`;
-- выбрать release name, например `2026.08.3`, и соответствующий installer tag,
-  например `v2026.08.3`.
+- выбрать release name, например `2026.08.N`, и соответствующий installer tag,
+  например `v2026.08.N`.
 
 Не используйте изменяемые `main`, `latest` или обычные Docker tags как
 зафиксированные production identities.
@@ -260,9 +280,9 @@ failed step и устраните причину; не ослабляйте SHA,
 - опубликованы `cabinet-dist.tar.gz`, два `.sha256`, архив installer,
   `release.json` и `release-provenance.json`;
 - обе команды `sha256sum --check` завершаются успешно;
-- `release.json` содержит ожидаемые Bot/Cabinet SHA и PostgreSQL/Redis digests;
+- `release.json` содержит ожидаемые Bot/Cabinet repository, SHA и PostgreSQL/Redis digests;
 - checksum Cabinet в manifest совпадает с реально скачанным файлом;
-- provenance содержит ожидаемые Cabinet SHA, Node builder и Nginx identities;
+- provenance содержит ожидаемые Cabinet repository/SHA, Node builder и Nginx identities;
 - архив installer соответствует точному опубликованному tag;
 - в installer archive отсутствуют private и generated artifacts, включая
   `server.env`, `env.txt`, `.playwright-mcp`, `__pycache__` и `*.pyc`.
