@@ -19,7 +19,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          gh workflow run publish-release-bundle.yml --ref main \
+          gh workflow run publish-release-bundle.yml --repo alexforworkgpt-source/installer --ref main \
             -f release=2026.08.0 \
             -f installer_tag=v2026.08.0 \
             -f bot_repository=https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git \
