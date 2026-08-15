@@ -1,0 +1,240 @@
+name: Publish Release Bundle
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: Public release name, for example 2026.08.0
+        required: true
+        type: string
+      installer_tag:
+        description: Existing immutable installer tag, for example v2026.08.0
+        required: true
+        type: string
+      bot_repository:
+        description: Public Bot Git repository
+        required: true
+        default: https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git
+        type: string
+      bot_ref:
+        description: Bot tag, branch or SHA to resolve
+        required: true
+        type: string
+      cabinet_repository:
+        description: Public Cabinet Git repository
+        required: true
+        default: https://github.com/BEDOLAGA-DEV/bedolaga-cabinet.git
+        type: string
+      cabinet_ref:
+        description: Cabinet tag, branch or SHA to resolve
+        required: true
+        type: string
+      postgres_image:
+        description: PostgreSQL image pinned by sha256 digest
+        required: true
+        type: string
+      redis_image:
+        description: Redis image pinned by sha256 digest
+        required: true
+        type: string
+      node_builder_image:
+        description: Node builder image pinned by sha256 digest
+        required: true
+        type: string
+      nginx_runtime_image:
+        description: Nginx runtime image pinned by sha256 digest
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-bundle-${{ inputs.installer_tag }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    environment: production-release
+    env:
+      RELEASE_NAME: ${{ inputs.release }}
+      INSTALLER_TAG: ${{ inputs.installer_tag }}
+      BOT_REPOSITORY: ${{ inputs.bot_repository }}
+      BOT_REF: ${{ inputs.bot_ref }}
+      CABINET_REPOSITORY: ${{ inputs.cabinet_repository }}
+      CABINET_REF: ${{ inputs.cabinet_ref }}
+      POSTGRES_IMAGE: ${{ inputs.postgres_image }}
+      REDIS_IMAGE: ${{ inputs.redis_image }}
+      NODE_BUILDER_IMAGE: ${{ inputs.node_builder_image }}
+      NGINX_RUNTIME_IMAGE: ${{ inputs.nginx_runtime_image }}
+    steps:
+      - name: Checkout exact installer tag
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.installer_tag }}
+
+      - name: Verify installer tag identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ "${RELEASE_NAME}" =~ ^[A-Za-z0-9._-]+$ ]]
+          [[ "${INSTALLER_TAG}" =~ ^[A-Za-z0-9._-]+$ ]]
+          test "$(git rev-parse HEAD)" = "$(git rev-parse "refs/tags/${INSTALLER_TAG}^{commit}")"
+          if gh release view "${INSTALLER_TAG}" >/dev/null 2>&1; then
+            is_draft="$(gh release view "${INSTALLER_TAG}" --json isDraft --jq .isDraft)"
+            if [[ "${is_draft}" == true ]]; then
+              gh release delete "${INSTALLER_TAG}" --yes
+            else
+              printf 'Published release already exists for tag %s\n' "${INSTALLER_TAG}" >&2
+              exit 1
+            fi
+          fi
+
+      - name: Run release contract tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m unittest discover -s tests
+          bash tests/integration/package-manager-lock.sh
+          sudo -E bash tests/integration/recovery-runtime-adapter.sh
+          bash tests/integration/firewall.sh
+          bash tests/integration/deploy-safe-stop.sh
+          bash tests/integration/full-install-transaction.sh
+          bash tests/integration/fresh-install-release-bundle.sh
+          bash tests/integration/first-install-pending-state.sh
+          bash tests/integration/first-install-runtime-change.sh
+          bash tests/integration/settings-runtime-change.sh
+          bash tests/integration/release-bundle-shell.sh
+          bash tests/integration/postgres-dump-verification.sh
+          bash tests/integration/protected-update-adapter.sh
+          bash tests/integration/protected-update-recovery.sh
+
+      - name: Resolve immutable source revisions
+        id: revisions
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bot_sha="$(python3 lib/release_bundle.py resolve-ref "${BOT_REPOSITORY}" "${BOT_REF}")"
+          cabinet_sha="$(python3 lib/release_bundle.py resolve-ref "${CABINET_REPOSITORY}" "${CABINET_REF}")"
+          printf 'bot_sha=%s\n' "${bot_sha}" >> "${GITHUB_OUTPUT}"
+          printf 'cabinet_sha=%s\n' "${cabinet_sha}" >> "${GITHUB_OUTPUT}"
+
+      - name: Build deterministic Cabinet artifact
+        env:
+          CABINET_SHA: ${{ steps.revisions.outputs.cabinet_sha }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p release-assets
+          bash scripts/build-cabinet-release-artifact.sh \
+            "${CABINET_REPOSITORY}" \
+            "${CABINET_SHA}" \
+            release-assets/cabinet-dist.tar.gz \
+            "${PWD}" \
+            "${NODE_BUILDER_IMAGE}" \
+            "${NGINX_RUNTIME_IMAGE}"
+          bash scripts/build-cabinet-release-artifact.sh \
+            "${CABINET_REPOSITORY}" \
+            "${CABINET_SHA}" \
+            release-assets/cabinet-dist-second.tar.gz \
+            "${PWD}" \
+            "${NODE_BUILDER_IMAGE}" \
+            "${NGINX_RUNTIME_IMAGE}"
+          cmp release-assets/cabinet-dist.tar.gz release-assets/cabinet-dist-second.tar.gz
+          rm -f release-assets/cabinet-dist-second.tar.gz
+          (cd release-assets && sha256sum cabinet-dist.tar.gz > cabinet-dist.tar.gz.sha256)
+          jq -n \
+            --arg cabinet_sha "${CABINET_SHA}" \
+            --arg node_builder_image "${NODE_BUILDER_IMAGE}" \
+            --arg nginx_runtime_image "${NGINX_RUNTIME_IMAGE}" \
+            '{cabinet_sha: $cabinet_sha, node_builder_image: $node_builder_image, nginx_runtime_image: $nginx_runtime_image}' \
+            > release-assets/release-provenance.json
+
+      - name: Create and validate manifest
+        env:
+          INSTALLER_REPOSITORY: ${{ github.repository }}
+          BOT_SHA: ${{ steps.revisions.outputs.bot_sha }}
+          CABINET_SHA: ${{ steps.revisions.outputs.cabinet_sha }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          artifact_sha256="$(sha256sum release-assets/cabinet-dist.tar.gz | cut -d ' ' -f 1)"
+          python3 scripts/release_bundle_publication.py create-manifest \
+            --output release-assets/release.json \
+            --release "${RELEASE_NAME}" \
+            --installer-repository "${INSTALLER_REPOSITORY}" \
+            --installer-tag "${INSTALLER_TAG}" \
+            --bot-repository "${BOT_REPOSITORY}" \
+            --bot-sha "${BOT_SHA}" \
+            --cabinet-sha "${CABINET_SHA}" \
+            --artifact-sha256 "${artifact_sha256}" \
+            --postgres-image "${POSTGRES_IMAGE}" \
+            --redis-image "${REDIS_IMAGE}" \
+            --migration-policy rollback-compatible
+          python3 lib/release_bundle.py validate release-assets/release.json 1 >/dev/null
+          python3 lib/release_bundle.py verify-cabinet \
+            release-assets/cabinet-dist.tar.gz "${artifact_sha256}"
+
+      - name: Package installer tag
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git archive --format=tar "${INSTALLER_TAG}" \
+            | gzip -n > "release-assets/installer-${RELEASE_NAME}.tar.gz"
+          (cd release-assets && \
+            sha256sum "installer-${RELEASE_NAME}.tar.gz" \
+              > "installer-${RELEASE_NAME}.tar.gz.sha256")
+
+      - name: Create draft release and upload assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gh release create "${INSTALLER_TAG}" \
+            --draft \
+            --verify-tag \
+            --title "Bedolaga Installer ${RELEASE_NAME}" \
+            --notes "Immutable installer Release Bundle ${RELEASE_NAME}"
+          touch .workflow-created-release
+          gh release upload "${INSTALLER_TAG}" release-assets/* --clobber
+
+      - name: Download and verify published draft assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p downloaded-assets
+          gh release download "${INSTALLER_TAG}" --dir downloaded-assets
+          diff release-assets/release.json downloaded-assets/release.json
+          (cd downloaded-assets && sha256sum --check cabinet-dist.tar.gz.sha256)
+          (cd downloaded-assets && \
+            sha256sum --check "installer-${RELEASE_NAME}.tar.gz.sha256")
+
+      - name: Publish verified release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gh release edit "${INSTALLER_TAG}" --draft=false
+          rm -f .workflow-created-release
+
+      - name: Remove failed workflow draft
+        if: ${{ failure() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [[ -f .workflow-created-release ]]; then
+            is_draft="$(gh release view "${INSTALLER_TAG}" --json isDraft --jq .isDraft 2>/dev/null || true)"
+            if [[ "${is_draft}" == true ]]; then
+              gh release delete "${INSTALLER_TAG}" --yes
+            fi
+          fi

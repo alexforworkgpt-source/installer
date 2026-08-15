@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "release": "2026.08.0",
+  "bot": {
+    "repository": "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",
+    "sha": "0000000000000000000000000000000000000000"
+  },
+  "cabinet": {
+    "source_sha": "0000000000000000000000000000000000000000",
+    "artifact_url": "https://github.com/OWNER/INSTALLER/releases/download/v2026.08.0/cabinet-dist.tar.gz",
+    "artifact_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "images": {
+    "postgres": "postgres@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "redis": "redis@sha256:0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "backend_contract": "1",
+  "configuration_schema": 1,
+  "migration_policy": "rollback-compatible"
+}

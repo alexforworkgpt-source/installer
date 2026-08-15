@@ -1,0 +1,40 @@
+---
+type: issue
+title: Безопасное обновление Bot Stack с защитой PostgreSQL
+execution: AFK
+status: ready-for-agent
+labels:
+  - ready-for-agent
+created: 2026-08-14
+---
+
+# Безопасное обновление Bot Stack с защитой PostgreSQL
+
+## Parent
+
+[PRD: Безопасная и воспроизводимая установка Bedolaga Bot Stack](./prd.md)
+
+## What to build
+
+Провести compatible Release Bundle через Runtime Change Transaction с защитой пользовательских данных. Перед потенциально schema-changing Bot update installer должен создать и проверить PostgreSQL dump, зафиксировать текущую Alembic revision и применить заявленную release migration policy. Успех означает совместно обновлённые и проверенные Bot, Cabinet, database schema, Caddy и Telegram routing.
+
+Если release допускает rollback, installer возвращает точный предыдущий bundle и проверяет его. Если database migration необратима для предыдущего Bot, installer не имитирует rollback, а переводит стек в безопасное состояние и выдаёт точный recovery plan.
+
+## Acceptance criteria
+
+- [ ] Update принимает только разрешённый и совместимый Release Bundle.
+- [ ] До изменения Bot создаётся читаемый проверенный PostgreSQL dump.
+- [ ] До и после update записываются фактические Alembic revisions.
+- [ ] Migration compatibility из release metadata определяет допустимую rollback policy.
+- [ ] Bot, Cabinet, images и generated runtime применяются как одна транзакционная операция.
+- [ ] Успех фиксируется только после database, Bot, Cabinet, Caddy и Telegram verification.
+- [ ] Совместимый rollback использует точный предыдущий Release Bundle и проходит post-rollback health.
+- [ ] Несовместимая database migration приводит к safely stopped outcome с recovery plan, а не к ложному сообщению об успешном rollback.
+- [ ] Telegram pending updates не удаляются по умолчанию во время update.
+- [ ] Failure-injection tests покрывают checkout, Cabinet activation, migration, Compose, Caddy, Telegram и final health stages.
+- [ ] Update documentation объясняет backup, migration policy, rollback и safely stopped outcome.
+
+## Blocked by
+
+- [Issue 03: Детерминированный Release Bundle и Cabinet artifact](./issue-03-deterministic-release-bundle.md)
+- [Issue 04: Runtime Change Transaction для установки и настроек](./issue-04-runtime-change-transaction.md)
