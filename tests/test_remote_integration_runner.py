@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
+import tarfile
+import tempfile
 import unittest
 
 
@@ -22,6 +24,24 @@ class RemoteIntegrationRunnerTests(unittest.TestCase):
         self.assertEqual(unchanged["SERVER_IS_DISPOSABLE"], "no")
         self.assertEqual(confirmed["SERVER_IS_DISPOSABLE"], "yes")
         self.assertEqual(config["SERVER_IS_DISPOSABLE"], "no")
+
+    def test_source_archive_excludes_private_environment_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            workspace = root / "installer"
+            workspace.mkdir()
+            (workspace / "README.md").write_text("public", encoding="utf-8")
+            (workspace / "server.env").write_text("private", encoding="utf-8")
+            (workspace / "env.txt").write_text("private", encoding="utf-8")
+            archive = root / "installer.tar.gz"
+
+            RUNNER.create_source_archive(workspace, archive)
+
+            with tarfile.open(archive, "r:gz") as bundle:
+                names = set(bundle.getnames())
+            self.assertIn("README.md", names)
+            self.assertNotIn("server.env", names)
+            self.assertNotIn("env.txt", names)
 
 
 if __name__ == "__main__":

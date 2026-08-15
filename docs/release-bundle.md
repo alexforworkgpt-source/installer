@@ -1,5 +1,9 @@
 # Release Bundle
 
+Объяснение без внутренних деталей — откуда скачиваются Bot и Cabinet, как
+проходит обновление и как подключить Custom Cabinet — находится в документе
+[«Как устроены установка и обновление»](release-and-update-flow.md).
+
 Release Bundle фиксирует совместимый production-набор Bot, Cabinet и runtime
 images. Manifest публикуется release pipeline installer вместе с release installer и проходит проверку до
 изменения работающего стека.
@@ -45,8 +49,9 @@ Node builder и Nginx runtime для сборки artifact задаются то
 digests; pipeline выполняет две сборки и сравнивает архивы byte-for-byte, а точные
 builder identities сохраняет в `release-provenance.json`.
 До публикации workflow требует явную аттестацию
-`lifecycle_proof=ubuntu-24.04-passed`. Её разрешено задавать только после полного
-disposable Ubuntu lifecycle gate из `RUNBOOK.md`.
+`lifecycle_proof=ubuntu-24.04-passed` и точный `lifecycle_sha`, совпадающий с
+публикуемым commit. Их разрешено задавать только после полного disposable Ubuntu
+lifecycle gate из `RUNBOOK.md`.
 
 ## Совместимость
 

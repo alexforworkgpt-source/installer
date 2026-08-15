@@ -199,7 +199,7 @@ def create_source_archive(workspace: Path, destination: Path) -> None:
             relative = path.relative_to(workspace)
             if relative.parts[0] in excluded_roots:
                 continue
-            if path.name == "server.env" or "__pycache__" in relative.parts:
+            if path.name in {"server.env", "env.txt"} or "__pycache__" in relative.parts:
                 continue
             if path.suffix == ".pyc":
                 continue

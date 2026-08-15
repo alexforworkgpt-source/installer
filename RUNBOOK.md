@@ -189,6 +189,86 @@ process arguments; context удаляется после committed/rolled-back �
 - если групповое обновление падает, установщик откатывает оба компонента на предыдущие версии
 
 Формат и процесс публикации описаны в [docs/release-bundle.md](docs/release-bundle.md).
+Понятная схема источников Bot, Cabinet и Installer находится в
+[docs/release-and-update-flow.md](docs/release-and-update-flow.md).
+
+## Публикация нового Release Bundle
+
+Публикация выполняется workflow `Publish Release Bundle` на GitHub Actions.
+Cabinet собирается на runner GitHub, а не на локальном компьютере и не на VPS.
+До начала убедитесь, что полный disposable Ubuntu 24.04 lifecycle gate прошёл
+для публикуемого installer commit.
+
+### 1. Выбрать неизменяемые версии
+
+- создать и отправить новый installer tag, указывающий на проверенный commit;
+- выбрать точный 40-символьный Git SHA Bot;
+- выбрать публичный репозиторий Cabinet и точный 40-символьный Git SHA;
+- разрешить PostgreSQL, Redis, Node builder и Nginx runtime только в identities
+  вида `image@sha256:<64 hex>`;
+- выбрать release name, например `2026.08.3`, и соответствующий installer tag,
+  например `v2026.08.3`.
+
+Не используйте изменяемые `main`, `latest` или обычные Docker tags как
+зафиксированные production identities.
+
+### 2. Запустить workflow
+
+В GitHub откройте:
+
+```text
+Actions -> Publish Release Bundle -> Run workflow
+```
+
+Заполните inputs:
+
+| Input | Что указать |
+|---|---|
+| `release` | Публичное имя версии без `v` |
+| `installer_tag` | Уже существующий неизменяемый tag installer |
+| `bot_ref` | Точный SHA Bot |
+| `cabinet_repository` | Upstream Cabinet или публичный Custom Cabinet |
+| `cabinet_ref` | Точный SHA Cabinet |
+| `postgres_image` | PostgreSQL image с `@sha256` |
+| `redis_image` | Redis image с `@sha256` |
+| `node_builder_image` | Node builder image с `@sha256` |
+| `nginx_runtime_image` | Nginx runtime image с `@sha256` |
+| `lifecycle_proof` | Только точное значение `ubuntu-24.04-passed` после реального gate |
+| `lifecycle_sha` | Точный 40-символьный Installer SHA, на котором прошёл gate |
+
+### 3. Дождаться полной проверки
+
+Workflow должен успешно выполнить все этапы:
+
+1. проверить installer tag и lifecycle attestation;
+2. запустить release-contract tests;
+3. разрешить Bot и Cabinet refs в точные SHA;
+4. дважды собрать Cabinet и сравнить результаты byte-for-byte;
+5. создать и проверить manifest;
+6. создать draft Release и загрузить assets;
+7. скачать draft-assets обратно и проверить checksums;
+8. только после этого сделать Release публичным.
+
+Draft не считается готовым результатом. При падении workflow найдите первый
+failed step и устраните причину; не ослабляйте SHA, digest или checksum проверки.
+
+### 4. Независимо проверить публичный Release
+
+После публикации скачайте assets по публичным URL без GitHub-токена и проверьте:
+
+- Release не является draft или prerelease;
+- опубликованы `cabinet-dist.tar.gz`, два `.sha256`, архив installer,
+  `release.json` и `release-provenance.json`;
+- обе команды `sha256sum --check` завершаются успешно;
+- `release.json` содержит ожидаемые Bot/Cabinet SHA и PostgreSQL/Redis digests;
+- checksum Cabinet в manifest совпадает с реально скачанным файлом;
+- provenance содержит ожидаемые Cabinet SHA, Node builder и Nginx identities;
+- архив installer соответствует точному опубликованному tag;
+- в installer archive отсутствуют private и generated artifacts, включая
+  `server.env`, `env.txt`, `.playwright-mcp`, `__pycache__` и `*.pyc`.
+
+Только после этой независимой проверки Release можно предлагать VPS как новый
+production Bundle.
 
 ## Сервисы
 
@@ -270,6 +350,6 @@ python3 tests/integration/run-remote.py final-postflight --confirm-disposable-se
 Gate проверяет clean preflight, minimal fresh/repeat install, legacy fixture,
 settings draft/apply, protected update, injected verified rollback, file recovery,
 non-root writes, второй Compose project и uninstall. Publication workflow требует
-input `lifecycle_proof=ubuntu-24.04-passed`; без реально завершённого gate его
-указывать нельзя. Диагностические файлы остаются private и не должны содержать
-credentials.
+inputs `lifecycle_proof=ubuntu-24.04-passed` и точный `lifecycle_sha`; без реально
+завершённого gate для этого commit их указывать нельзя. Диагностические файлы
+остаются private и не должны содержать credentials.

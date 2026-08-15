@@ -1,6 +1,7 @@
-# Установщик Bot Stack
+# Installer
 
-Интерактивный установщик и меню обслуживания для Bedolaga бота и веб-кабинета.
+Интерактивная установка и обслуживание Upstream Bot и выбранного Cabinet
+frontend: Custom Cabinet или Upstream Cabinet.
 
 Целевая схема:
 
@@ -27,7 +28,7 @@ sudo bash bot-menu.sh
 - Быстрые точки: `<PROJECT_ROOT>/state/snapshots/`
 - Установщик запоминает последний `PROJECT_ROOT` и использует его при следующем запуске
 - Генерируемые файлы: минимальный `bot.env`, пользовательский `bot.override.env`, `cabinet.env`, `docker-compose.yml`, `bot-stack.caddy`
-- Репозитории по умолчанию: официальные Bedolaga bot и cabinet, хранятся в state
+- Точные upstream-репозитории по умолчанию хранятся в state
 - Меню включает установку, обслуживание, обновления, восстановление, домены и Caddy, firewall, резервирование и удаление
 - Отдельный перенос между VPS сохраняет актуальную PostgreSQL, Redis, точные Git SHA и Docker-образы
 - `Резервирование` объединяет быстрые точки и проверяемые file backups
@@ -53,6 +54,25 @@ sudo bash bot-menu.sh
 Рабочие сценарии обслуживания: [RUNBOOK.md](RUNBOOK.md).
 Перенос на другую VPS: [MIGRATION.md](MIGRATION.md).
 Контракт production-релиза: [docs/release-bundle.md](docs/release-bundle.md).
+Техническая атрибуция и совместимые legacy-identifiers:
+[docs/technical-attribution.md](docs/technical-attribution.md).
+
+## Откуда устанавливаются компоненты
+
+| Компонент | Источник при установке или обновлении |
+|---|---|
+| Installer | Архив точного tag из публичного Release `installer` |
+| Upstream Bot | Upstream-репозиторий, точный Git SHA; сборка выполняется на VPS |
+| Custom Cabinet или Upstream Cabinet | Готовый `cabinet-dist.tar.gz` из Release `installer` |
+| PostgreSQL и Redis | Docker-образы по неизменяемым `@sha256` digest |
+
+GitHub Actions собирает Cabinet frontend из точного SHA выбранного публичного
+репозитория. Исходники Upstream Bot и Cabinet frontend в Release `installer` не
+копируются. Новая версия в `main` upstream-репозитория не устанавливается
+автоматически: сначала должен быть опубликован новый проверенный Bundle.
+
+Понятная схема первой установки, обновления и кастомизации Cabinet:
+[docs/release-and-update-flow.md](docs/release-and-update-flow.md).
 
 ## Проверки
 

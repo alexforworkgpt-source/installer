@@ -44,6 +44,10 @@ on:
         description: Exact confirmation that disposable Ubuntu 24.04 lifecycle passed
         required: true
         type: string
+      lifecycle_sha:
+        description: Exact Installer commit tested by the disposable lifecycle
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -67,6 +71,7 @@ jobs:
       REDIS_IMAGE: ${{ inputs.redis_image }}
       NODE_BUILDER_IMAGE: ${{ inputs.node_builder_image }}
       NGINX_RUNTIME_IMAGE: ${{ inputs.nginx_runtime_image }}
+      LIFECYCLE_SHA: ${{ inputs.lifecycle_sha }}
     steps:
       - name: Checkout exact installer tag
         uses: actions/checkout@v4
@@ -82,7 +87,34 @@ jobs:
           set -Eeuo pipefail
           [[ "${RELEASE_NAME}" =~ ^[A-Za-z0-9._-]+$ ]]
           [[ "${INSTALLER_TAG}" =~ ^[A-Za-z0-9._-]+$ ]]
+          [[ "${LIFECYCLE_SHA}" =~ ^[0-9a-f]{40}$ ]]
           test "${{ inputs.lifecycle_proof }}" = "ubuntu-24.04-passed"
+          python3 - <<'PY'
+          import os
+          from urllib.parse import urlsplit
+
+          value = os.environ["CABINET_REPOSITORY"]
+          try:
+              parts = urlsplit(value)
+              port = parts.port
+          except ValueError as error:
+              raise SystemExit(f"Invalid Cabinet repository URL: {error}") from error
+
+          if (
+              value != value.strip()
+              or any(character.isspace() for character in value)
+              or parts.scheme != "https"
+              or not parts.hostname
+              or not parts.path.strip("/")
+              or parts.username is not None
+              or parts.password is not None
+              or parts.query
+              or parts.fragment
+              or port not in (None, 443)
+          ):
+              raise SystemExit("Cabinet repository must be a public HTTPS Git URL without credentials")
+          PY
+          test "${LIFECYCLE_SHA}" = "$(git rev-parse HEAD)"
           test "$(git rev-parse HEAD)" = "$(git rev-parse "refs/tags/${INSTALLER_TAG}^{commit}")"
           if gh release view "${INSTALLER_TAG}" >/dev/null 2>&1; then
             is_draft="$(gh release view "${INSTALLER_TAG}" --json isDraft --jq .isDraft)"
@@ -151,10 +183,11 @@ jobs:
           rm -f release-assets/cabinet-dist-second.tar.gz
           (cd release-assets && sha256sum cabinet-dist.tar.gz > cabinet-dist.tar.gz.sha256)
           jq -n \
+            --arg cabinet_repository "${CABINET_REPOSITORY}" \
             --arg cabinet_sha "${CABINET_SHA}" \
             --arg node_builder_image "${NODE_BUILDER_IMAGE}" \
             --arg nginx_runtime_image "${NGINX_RUNTIME_IMAGE}" \
-            '{cabinet_sha: $cabinet_sha, node_builder_image: $node_builder_image, nginx_runtime_image: $nginx_runtime_image}' \
+            '{cabinet_repository: $cabinet_repository, cabinet_sha: $cabinet_sha, node_builder_image: $node_builder_image, nginx_runtime_image: $nginx_runtime_image}' \
             > release-assets/release-provenance.json
 
       - name: Create and validate manifest
@@ -201,8 +234,8 @@ jobs:
           gh release create "${INSTALLER_TAG}" \
             --draft \
             --verify-tag \
-            --title "Bedolaga Installer ${RELEASE_NAME}" \
-            --notes "Immutable installer Release Bundle ${RELEASE_NAME}"
+            --title "Installer ${RELEASE_NAME}" \
+            --notes "Immutable Release Bundle ${RELEASE_NAME}"
           touch .workflow-created-release
           gh release upload "${INSTALLER_TAG}" release-assets/* --clobber
 

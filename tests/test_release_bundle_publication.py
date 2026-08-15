@@ -89,7 +89,7 @@ class ReleaseBundlePublicationTests(unittest.TestCase):
             create_release_manifest(
                 output_path=output,
                 release="2026.08.0",
-                installer_repository="BEDOLAGA-DEV/bedolaga-installer",
+                installer_repository="OWNER/installer",
                 installer_tag="v2026.08.0",
                 bot_repository="https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",
                 bot_sha="b" * 40,
@@ -103,7 +103,7 @@ class ReleaseBundlePublicationTests(unittest.TestCase):
             manifest = json.loads(output.read_text(encoding="utf-8"))
             self.assertEqual(
                 manifest["cabinet"]["artifact_url"],
-                "https://github.com/BEDOLAGA-DEV/bedolaga-installer/releases/download/v2026.08.0/cabinet-dist.tar.gz",
+                "https://github.com/OWNER/installer/releases/download/v2026.08.0/cabinet-dist.tar.gz",
             )
             bundle = load_release_bundle(output, supported_configuration_schema=1)
             self.assertEqual(bundle.release, "2026.08.0")

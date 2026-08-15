@@ -42,7 +42,7 @@ def valid_manifest() -> dict[str, object]:
         },
         "cabinet": {
             "source_sha": VALID_CABINET_SHA,
-            "artifact_url": "https://github.com/BEDOLAGA-DEV/bedolaga-installer/releases/download/2026.08.0/cabinet-dist.tar.gz",
+            "artifact_url": "https://github.com/OWNER/installer/releases/download/2026.08.0/cabinet-dist.tar.gz",
             "artifact_sha256": VALID_ARTIFACT_SHA256,
         },
         "images": {

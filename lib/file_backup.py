@@ -216,7 +216,7 @@ def validate_file_backup(
             if manifest.get("schema_version") != 1:
                 raise RecoveryError("unsupported file backup schema_version")
             if manifest.get("artifact_type") != ARTIFACT_TYPE:
-                raise RecoveryError("artifact is not a Bedolaga file backup")
+                raise RecoveryError("artifact is not a supported file backup")
             artifact_role = manifest.get("artifact_role", "manual")
             if artifact_role not in {"manual", "safety"}:
                 raise RecoveryError("unsupported file backup artifact_role")

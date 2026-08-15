@@ -139,7 +139,9 @@ PROTECT_RESULT="success"
 rotate_postgres_credentials_runtime
 [[ "$(paste -sd, "${ORDER_LOG}")" == 'protect,apply,verify,commit' ]]
 [[ "${LAST_RUNTIME_CHANGE_OUTCOME}" == 'committed' ]]
-[[ ! -e "${STATE_DIR}"/.postgres-rotation.* ]]
+if compgen -G "${STATE_DIR}/.postgres-rotation.*" >/dev/null; then
+  exit 1
+fi
 
 : > "${ORDER_LOG}"
 APPLY_RESULT="failure"
