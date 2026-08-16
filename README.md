@@ -12,11 +12,37 @@ legacy Bundle сохраняют точный исторический Upstream 
 - отдельный домен для webhook
 - отдельный домен для кабинета и mini app
 
-Запуск:
+## Запуск на новой VPS
+
+Если Installer ещё не скачан, загрузите архив точного immutable Release tag,
+проверьте checksum и только после этого запускайте скрипт:
 
 ```bash
+RELEASE_TAG=v2026.08.5
+RELEASE_NAME=2026.08.5
+INSTALLER_DIR="$HOME/installer-${RELEASE_TAG}"
+
+mkdir -p "${INSTALLER_DIR}"
+cd "${INSTALLER_DIR}"
+
+curl -fLO "https://github.com/alexforworkgpt-source/installer/releases/download/${RELEASE_TAG}/installer-${RELEASE_NAME}.tar.gz"
+curl -fLO "https://github.com/alexforworkgpt-source/installer/releases/download/${RELEASE_TAG}/installer-${RELEASE_NAME}.tar.gz.sha256"
+
+sha256sum --check "installer-${RELEASE_NAME}.tar.gz.sha256"
+tar -xzf "installer-${RELEASE_NAME}.tar.gz"
+
 sudo bash bot-menu.sh
 ```
+
+Проверка checksum должна вывести:
+
+```text
+installer-2026.08.5.tar.gz: OK
+```
+
+Если файлы Installer уже находятся в текущем каталоге, достаточно выполнить
+`sudo bash bot-menu.sh`. После первой установки меню обслуживания запускается
+командой `sudo vpn`.
 
 Основное:
 
