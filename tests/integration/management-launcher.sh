@@ -76,8 +76,21 @@ if remove_installer_tooling; then
 fi
 [[ -d "${installer_home}" && -f "${launcher}" ]]
 
+require_state_file() { return 1; }
+clear() { :; }
+print_menu_header() { :; }
+print_menu_section() { :; }
+print_menu_item() { :; }
+pause() { :; }
+menu_choice_index=0
+menu_choices=(4 5)
+read_menu_choice() {
+  printf -v "$2" '%s' "${menu_choices[menu_choice_index]}"
+  menu_choice_index=$((menu_choice_index + 1))
+}
 prompt_typed_confirmation() { [[ "$1" == REMOVE_INSTALLER ]]; }
-remove_installer_tooling
+STATE_FILE="${TEMP_ROOT}/missing-install.state"
+uninstall_menu
 [[ ! -e "${installer_home}" && ! -e "${launcher}" ]]
 
 printf '%s\n' 'Management launcher integration harness passed.'

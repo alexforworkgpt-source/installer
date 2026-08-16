@@ -53,15 +53,17 @@ migration_remove_project_stack() {
   local compose_file="${project_root}/state/docker-compose.yml"
   local override_file="${project_root}/state/migration-image.override.yml"
   local resource_marker="${project_root}/.migration-resources-created"
-  local compose_project
+  local compose_project=""
   local compose_args=()
   local resource_name
 
   is_safe_project_root "${project_root}" || die "Небезопасный путь очистки: ${project_root}"
-  compose_project="$(compose_project_name_for_root "${project_root}")"
   if [[ -f "${resource_marker}" ]]; then
     [[ -f "${compose_file}" && -f "${override_file}" ]] \
       || { log_error "Не хватает compose-файлов для безопасной очистки ${project_root}."; return 1; }
+    compose_project="$(migration_manifest_value "${resource_marker}" compose_project)"
+    [[ "${compose_project}" =~ ^[a-z0-9][a-z0-9_-]*$ ]] \
+      || { log_error "Некорректный Compose project в marker очистки ${project_root}."; return 1; }
     compose_args=(-f "${compose_file}")
     compose_args+=(-f "${override_file}")
     docker compose --project-name "${compose_project}" "${compose_args[@]}" down -v \
@@ -188,7 +190,8 @@ create_migration_export() {
 
   if [[ -f "${operation_marker}" ]]; then
     log_warn "Найден прерванный экспорт. Возвращаю сервисы в рабочее состояние."
-    docker compose -f "${COMPOSE_FILE}" start postgres redis bot >/dev/null 2>&1 || true
+    compose_cmd start postgres redis bot >/dev/null 2>&1 \
+      || die "Не удалось восстановить сервисы после прерванного экспорта; marker сохранён."
     rm -f "${operation_marker}"
   fi
 
@@ -244,12 +247,19 @@ create_migration_export() {
 
   migration_export_cleanup() {
     local exit_code=$?
+    local restart_failed="false"
     trap - EXIT
     if [[ "${redis_was_running}" == "true" ]]; then
-      docker compose -f "${COMPOSE_FILE}" start redis >/dev/null 2>&1 || true
+      if ! compose_cmd start redis >/dev/null 2>&1; then
+        log_error "Не удалось запустить Redis после экспорта."
+        restart_failed="true"
+      fi
     fi
     if [[ "${bot_was_running}" == "true" && ("${export_completed}" != "true" || "${final_cutover}" != "true") ]]; then
-      docker compose -f "${COMPOSE_FILE}" start bot >/dev/null 2>&1 || true
+      if ! compose_cmd start bot >/dev/null 2>&1; then
+        log_error "Не удалось запустить Bot после экспорта."
+        restart_failed="true"
+      fi
     fi
     [[ -n "${bot_image_tag}" ]] && docker image rm "${bot_image_tag}" >/dev/null 2>&1 || true
     [[ -n "${postgres_image_tag}" ]] && docker image rm "${postgres_image_tag}" >/dev/null 2>&1 || true
@@ -257,7 +267,12 @@ create_migration_export() {
     if [[ "${export_completed}" != "true" ]]; then
       rm -f "${archive_path}" "${checksum_path}" >/dev/null 2>&1 || true
     fi
-    rm -f "${operation_marker}" >/dev/null 2>&1 || true
+    if [[ "${restart_failed}" == "false" ]]; then
+      rm -f "${operation_marker}" >/dev/null 2>&1 || true
+    else
+      log_error "Migration export marker сохранён для повторного восстановления сервисов."
+      [[ "${exit_code}" -ne 0 ]] || exit_code=1
+    fi
     rm -rf "${staging_dir}" >/dev/null 2>&1 || true
     umask "${old_umask}"
     return "${exit_code}"
@@ -663,7 +678,7 @@ activate_migrated_stack() {
     local exit_code=$?
     trap - EXIT
     if [[ "${activation_completed}" != "true" && ! -f "${STATE_DIR}/migration.completed" ]]; then
-      docker compose -f "${COMPOSE_FILE}" -f "${override_file}" stop bot >/dev/null 2>&1 || true
+      compose_cmd stop bot >/dev/null 2>&1 || true
       log_warn "Активация не завершена: новый бот остановлен для защиты от двойной обработки."
     fi
     return "${exit_code}"
@@ -717,7 +732,7 @@ discard_pending_migration() {
   for image_tag in "${image_tags[@]}"; do
     docker image rm "${image_tag}" >/dev/null 2>&1 || true
   done
-  rm -f "${LAST_PROJECT_ROOT_FILE}"
+  clear_last_project_root
   unset PROJECT_ROOT STATE_DIR STATE_FILE
   log_info "Тестовый импорт удален. Можно импортировать финальный пакет."
 }

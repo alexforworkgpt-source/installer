@@ -156,9 +156,9 @@ deploy_compose_stack() {
 regenerate_caddy_config() {
   ensure_root
   require_state_file
-  render_caddy_file
-  install_caddy_candidate
-  reload_caddy
+  render_caddy_file || return 1
+  install_caddy_candidate || return 1
+  reload_caddy || return 1
   log_info "Конфигурация Caddy пересоздана и перезагружена."
 }
 

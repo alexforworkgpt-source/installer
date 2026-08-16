@@ -93,11 +93,15 @@ python3 -m unittest tests.test_installation_config
 
 ```bash
 bash tests/integration/firewall.sh
+bash tests/integration/caddy-regeneration-failure.sh
 bash tests/integration/deploy-safe-stop.sh
 bash tests/integration/full-install-transaction.sh
 bash tests/integration/fresh-install-release-bundle.sh
+bash tests/integration/fresh-install-project-root.sh
 bash tests/integration/first-install-pending-state.sh
 bash tests/integration/first-install-runtime-change.sh
+bash tests/integration/migration-discard-identity.sh
+bash tests/integration/migration-export-cleanup.sh
 bash tests/integration/settings-runtime-change.sh
 bash tests/integration/release-bundle-shell.sh
 bash tests/integration/postgres-dump-verification.sh

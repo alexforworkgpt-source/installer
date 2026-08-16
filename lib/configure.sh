@@ -6,6 +6,7 @@ collect_configuration() {
   set_default_runtime_values
   local previous_project_root="${PROJECT_ROOT}"
   CONFIGURATION_CREATES_PROJECT_ROOT="false"
+  reset_project_root_paths
 
   PROJECT_ROOT="$(prompt_validated_input \
     is_safe_project_root \
@@ -15,12 +16,15 @@ collect_configuration() {
     "/opt/bot-stack" \
     "${PROJECT_ROOT}")"
   if [[ "${PROJECT_ROOT}" != "${previous_project_root}" ]]; then
+    unset COMPOSE_PROJECT_NAME
     reset_project_root_paths
   fi
   set_runtime_paths
   if [[ ! -e "${PROJECT_ROOT}" ]]; then
     CONFIGURATION_CREATES_PROJECT_ROOT="true"
+    reset_project_root_paths
   elif [[ ! -f "${STATE_FILE}" ]]; then
+    reset_project_root_paths
     die "Каталог ${PROJECT_ROOT} уже существует и не содержит installer state. Выберите новый пустой путь."
   fi
 

@@ -264,6 +264,7 @@ prepare_first_install_project() {
     || die "Parent каталога установки должен существовать, принадлежать root и не быть доступен для записи другим пользователям: ${parent_dir}"
   mkdir "${PROJECT_ROOT}" \
     || die "Не удалось эксклюзивно создать новый project root: ${PROJECT_ROOT}"
+  set_runtime_paths
   mkdir "${STATE_DIR}"
   transaction_id="$(generate_hex_secret 32)"
   [[ "${transaction_id}" =~ ^[0-9a-f]{32}$ ]] || return 1
@@ -494,6 +495,8 @@ full_install_once() {
   ensure_root || return 1
   assert_supported_os || return 1
   set_default_runtime_values || return 1
+  # Do not create an unaccepted project root while logging host/release preparation.
+  reset_project_root_paths
   install_base_packages || return 1
   install_docker_engine || return 1
   ensure_docker_compose_plugin || return 1
@@ -504,6 +507,7 @@ full_install_once() {
   POSTGRES_IMAGE="${PREPARED_POSTGRES_IMAGE}"
   REDIS_IMAGE="${PREPARED_REDIS_IMAGE}"
   configure_stack pending-first-install || return 1
+  set_runtime_paths
   context_dir="${STATE_DIR}/.first-install-context"
   mkdir -p "${context_dir}"
   write_first_install_context_value \
@@ -527,8 +531,15 @@ full_install() {
   ensure_root
   assert_supported_os
 
-  local running_services=""
   local fallback_result_file="${GLOBAL_INSTALLER_STATE_DIR}/last-runtime-change.json"
+  local failed_project_root=""
+  local remembered_project_root=""
+  local initial_result_file=""
+  local initial_result_identity=""
+  local previous_result_file=""
+  local previous_result_identity=""
+  local current_result_file=""
+  local current_result_identity=""
 
   resolve_state_file
   if [[ -f "${STATE_FILE}" ]]; then
@@ -540,6 +551,16 @@ full_install() {
     return $?
   fi
 
+  initial_result_file="$(dirname "${STATE_FILE}")/last-runtime-change.json"
+  if [[ -f "${initial_result_file}" ]]; then
+    initial_result_identity="$(stat -c '%d:%i' "${initial_result_file}")" || return 1
+  fi
+  remembered_project_root="$(read_last_project_root || true)"
+  if [[ -n "${remembered_project_root}" \
+    && -f "${remembered_project_root}/state/last-runtime-change.json" ]]; then
+    previous_result_file="${remembered_project_root}/state/last-runtime-change.json"
+    previous_result_identity="$(stat -c '%d:%i' "${previous_result_file}")" || return 1
+  fi
   rm -f "${fallback_result_file}"
 
   if (full_install_once); then
@@ -549,6 +570,14 @@ full_install() {
     return 0
   fi
 
+  failed_project_root="$(read_last_project_root || true)"
+  if [[ -n "${failed_project_root}" \
+    && ( -f "${failed_project_root}/state/last-runtime-change.json" \
+      || -f "${failed_project_root}/state/runtime-change.in-progress" ) ]]; then
+    PROJECT_ROOT="${failed_project_root}"
+    reset_project_root_paths
+    set_runtime_paths
+  fi
   resolve_state_file
   PROJECT_ROOT="${PROJECT_ROOT:-$(dirname "$(dirname "${STATE_FILE}")")}"
   reset_project_root_paths
@@ -558,39 +587,22 @@ full_install() {
     persist_runtime_change_result_json "$(<"${fallback_result_file}")"
     return 1
   fi
-  if [[ -f "${STATE_DIR}/last-runtime-change.json" ]]; then
-    persist_runtime_change_result_json "$(<"${STATE_DIR}/last-runtime-change.json")"
-    return 1
+  current_result_file="${STATE_DIR}/last-runtime-change.json"
+  if [[ -f "${current_result_file}" ]]; then
+    current_result_identity="$(stat -c '%d:%i' "${current_result_file}")" || return 1
+    if [[ !( "${current_result_file}" == "${initial_result_file}" \
+        && "${current_result_identity}" == "${initial_result_identity}" ) \
+      && !( "${current_result_file}" == "${previous_result_file}" \
+        && "${current_result_identity}" == "${previous_result_identity}" ) ]]; then
+      persist_runtime_change_result_json "$(<"${current_result_file}")"
+      return 1
+    fi
   fi
   if [[ -f "${STATE_DIR}/runtime-change.in-progress" ]]; then
     log_error "First-install transaction прервана; recovery выполнится при следующем запуске."
     return 1
   fi
 
-  if cleanup_failed_first_install; then
-    record_runtime_change_result \
-      "full install" "safely_stopped" "rollback" \
-      "Первая установка не завершена; partial project удалён." "false" \
-      "Исправьте причину ошибки и повторите установку с тем же Release Bundle." \
-      "$(installer_log_file)"
-    log_error "Runtime Change safely stopped: partial first install удалён."
-    return 0
-  fi
-  if (compose_cmd stop bot >/dev/null 2>&1) \
-    && running_services="$(compose_cmd ps --status running --services 2>/dev/null)" \
-    && ! grep -Fxq bot <<<"${running_services}"; then
-    record_runtime_change_result \
-      "full install" "safely_stopped" "rollback" \
-      "Установка и rollback не прошли проверку; Bot остановлен." "false" \
-      "Проверьте installer log и recovery snapshot перед повтором." "$(installer_log_file)"
-    log_error "Runtime Change safely stopped: установка не завершена, Bot остановлен."
-    return 0
-  fi
-
-  record_runtime_change_result \
-    "full install" "safely_stopped" "safe_stop" \
-    "Не удалось подтвердить остановку Bot после failed install." "false" \
-    "Остановите Bot вручную и проверьте runtime перед повтором." "$(installer_log_file)"
-  log_error "Runtime Change не смог подтвердить остановку Bot после failed install."
+  log_error "Первая установка завершилась до начала Runtime Change; runtime не изменён."
   return 1
 }

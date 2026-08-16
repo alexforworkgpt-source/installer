@@ -106,7 +106,6 @@ remove_installer_tooling() {
 
 uninstall_menu() {
   ensure_root
-  require_state_file
 
   while true; do
     clear
