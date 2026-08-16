@@ -115,7 +115,16 @@ EOF
 cat > "${FAKE_BIN}/curl" <<'EOF'
 #!/usr/bin/env bash
 set -Eeuo pipefail
-if [[ "$*" == *'%{http_code}'* ]]; then
+if [[ "$*" == *'/setWebhook'* ]]; then
+  attempts_file="${RECOVERY_FAKE_STATE}/set-webhook-attempts"
+  attempts="$(( $(cat "${attempts_file}" 2>/dev/null || printf '0') + 1 ))"
+  printf '%s\n' "${attempts}" > "${attempts_file}"
+  if [[ "${attempts}" == "1" ]]; then
+    printf '%s\n' 'simulated transient DNS failure' >&2
+    exit 28
+  fi
+  printf '%s\n' '{"ok":true}'
+elif [[ "$*" == *'%{http_code}'* ]]; then
   [[ "$*" == *'hooks.example.test/'* ]] && printf '%s' '404' || printf '%s' '200'
 elif [[ "$*" == *'/health/unified'* ]]; then
   printf '%s\n' '{"status":"ok","web_api_enabled":true,"miniapp_static":{"mounted":true,"path":"/cabinet"},"remnawave_webhook":{"enabled":true,"path":"/remnawave-webhook"}}'
@@ -147,6 +156,7 @@ exit 0
 EOF
 chmod +x "${FAKE_BIN}"/*
 export PATH="${FAKE_BIN}:${PATH}"
+export TELEGRAM_API_RETRY_DELAY=0
 
 bash "${SCRIPT_DIR}/lib/recovery_runtime.sh" quiesce "${PROJECT_ROOT}"
 [[ "$(<"${RECOVERY_FAKE_STATE}/bot")" == 'stopped' ]]
@@ -155,6 +165,7 @@ bash "${SCRIPT_DIR}/lib/recovery_runtime.sh" quiesce "${PROJECT_ROOT}"
 bash "${SCRIPT_DIR}/lib/recovery_runtime.sh" activate "${PROJECT_ROOT}"
 [[ "$(<"${RECOVERY_FAKE_STATE}/bot")" == 'running' ]]
 [[ "$(<"${RECOVERY_FAKE_STATE}/caddy")" == 'running' ]]
+[[ "$(<"${RECOVERY_FAKE_STATE}/set-webhook-attempts")" == '2' ]]
 
 bash "${SCRIPT_DIR}/lib/recovery_runtime.sh" verify "${PROJECT_ROOT}"
 
