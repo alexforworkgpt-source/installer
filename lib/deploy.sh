@@ -477,7 +477,7 @@ finalize_runtime_change() {
   local success_message="$1"
 
   wait_for_runtime_ready 60 3 || die "Сервисы не успели выйти в готовое состояние после изменения."
-  verify_runtime_health || die "Пост-проверка стека завершилась ошибкой."
+  verify_private_runtime_ports || die "Пост-проверка нашла небезопасные runtime port bindings."
   mark_runtime_apply_state
   log_info "${success_message}"
 }

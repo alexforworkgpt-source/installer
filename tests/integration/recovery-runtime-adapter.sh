@@ -115,7 +115,13 @@ EOF
 cat > "${FAKE_BIN}/curl" <<'EOF'
 #!/usr/bin/env bash
 set -Eeuo pipefail
-if [[ "$*" == *'/setWebhook'* ]]; then
+if [[ "$*" == *'%{http_code}'* && "$*" == *'/api/cabinet/branding'* ]]; then
+  attempts_file="${RECOVERY_FAKE_STATE}/app-api-status-attempts"
+  attempts="$(( $(cat "${attempts_file}" 2>/dev/null || printf '0') + 1 ))"
+  printf '%s\n' "${attempts}" > "${attempts_file}"
+  [[ "${attempts}" == "1" ]] || exit 28
+  printf '200'
+elif [[ "$*" == *'/setWebhook'* ]]; then
   attempts_file="${RECOVERY_FAKE_STATE}/set-webhook-attempts"
   attempts="$(( $(cat "${attempts_file}" 2>/dev/null || printf '0') + 1 ))"
   printf '%s\n' "${attempts}" > "${attempts_file}"
@@ -168,6 +174,7 @@ bash "${SCRIPT_DIR}/lib/recovery_runtime.sh" activate "${PROJECT_ROOT}"
 [[ "$(<"${RECOVERY_FAKE_STATE}/set-webhook-attempts")" == '2' ]]
 
 bash "${SCRIPT_DIR}/lib/recovery_runtime.sh" verify "${PROJECT_ROOT}"
+[[ "$(<"${RECOVERY_FAKE_STATE}/app-api-status-attempts")" == '1' ]]
 
 rm -f "${PROJECT_ROOT}/state/install.state"
 bash "${SCRIPT_DIR}/lib/recovery_runtime.sh" safe-stop "${PROJECT_ROOT}"

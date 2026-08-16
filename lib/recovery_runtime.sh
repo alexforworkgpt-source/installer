@@ -126,8 +126,8 @@ recovery_verify_runtime() {
     || die "Recovery не подтвердил TLS и default deny webhook host."
   wait_for_runtime_ready 60 3 \
     || die "Recovery runtime не вышел в готовое состояние."
-  verify_runtime_health \
-    || die "Recovery не прошёл итоговую Docker/Caddy/Telegram проверку."
+  verify_private_runtime_ports \
+    || die "Recovery нашёл небезопасные runtime port bindings."
 }
 
 case "${action}" in
