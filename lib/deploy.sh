@@ -260,18 +260,6 @@ EOF
   reload_caddy
   log_info "Сайт ${server_names} добавлен в отдельный Caddy snippet: ${target_snippet_file}"
 }
-telegram_api_request() {
-  local attempt
-
-  for attempt in 1 2 3; do
-    if curl_with_timeouts "$@"; then
-      return 0
-    fi
-    ((attempt == 3)) || sleep "${TELEGRAM_API_RETRY_DELAY:-1}"
-  done
-  return 1
-}
-
 set_telegram_webhook() {
   require_state_file
   [[ -n "${BOT_TOKEN:-}" ]] || die "BOT_TOKEN не настроен."
@@ -283,7 +271,7 @@ set_telegram_webhook() {
   webhook_endpoint="${WEBHOOK_URL}/webhook"
 
   log_info "Обновление Telegram webhook на ${webhook_endpoint}"
-  response="$(telegram_api_request -fsS -X POST \
+  response="$(curl_with_retries -fsS -X POST \
     "https://api.telegram.org/bot${BOT_TOKEN}/setWebhook" \
     --data-urlencode "url=${webhook_endpoint}" \
     --data-urlencode "secret_token=${WEBHOOK_SECRET_TOKEN}" \

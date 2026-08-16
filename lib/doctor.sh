@@ -156,7 +156,7 @@ check_remnawave_webhook_runtime() {
      and .remnawave_webhook.enabled == true
      and .remnawave_webhook.path == "/remnawave-webhook"' \
     >/dev/null <<<"${local_health}" || return 1
-  public_health="$(curl_with_timeouts -fsS "https://${HOOK_DOMAIN}/remnawave-webhook")" || return 1
+  public_health="$(curl_with_retries -fsS "https://${HOOK_DOMAIN}/remnawave-webhook")" || return 1
   jq -e \
     '.status == "ok"
      and .service == "remnawave_webhook"
@@ -168,8 +168,8 @@ check_cabinet_runtime_contract() {
   local branding
   local unified
 
-  branding="$(curl_with_timeouts -fsS "https://${APP_DOMAIN}/api/cabinet/branding")" || return 1
-  unified="$(curl_with_timeouts -fsS "https://${APP_DOMAIN}/health/unified")" || return 1
+  branding="$(curl_with_retries -fsS "https://${APP_DOMAIN}/api/cabinet/branding")" || return 1
+  unified="$(curl_with_retries -fsS "https://${APP_DOMAIN}/health/unified")" || return 1
   jq -e 'type == "object"' >/dev/null <<<"${branding}" || return 1
   jq -e \
     '.status == "ok"
@@ -182,7 +182,7 @@ check_cabinet_runtime_contract() {
 
 check_telegram_webhook_matches() {
   local expected_url="${WEBHOOK_URL}/webhook"
-  curl_with_timeouts -fsS "https://api.telegram.org/bot${BOT_TOKEN}/getWebhookInfo" | jq -e --arg url "${expected_url}" '.ok == true and .result.url == $url' >/dev/null
+  curl_with_retries -fsS "https://api.telegram.org/bot${BOT_TOKEN}/getWebhookInfo" | jq -e --arg url "${expected_url}" '.ok == true and .result.url == $url' >/dev/null
 }
 
 compose_service_running() {

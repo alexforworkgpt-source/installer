@@ -120,7 +120,7 @@ recovery_verify_runtime() {
     || die "Recovery не подтвердил готовность Redis."
   systemctl is-active --quiet caddy \
     || die "Recovery не подтвердил активный Caddy."
-  curl_with_timeouts -fsS -o /dev/null "https://${APP_DOMAIN}/" \
+  curl_with_retries -fsS -o /dev/null "https://${APP_DOMAIN}/" \
     || die "Recovery не подтвердил публичный TLS Cabinet."
   [[ "$(public_https_status "https://${HOOK_DOMAIN}/" || true)" == "404" ]] \
     || die "Recovery не подтвердил TLS и default deny webhook host."

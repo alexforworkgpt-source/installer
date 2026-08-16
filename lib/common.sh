@@ -934,12 +934,24 @@ curl_with_timeouts() {
     "$@"
 }
 
+curl_with_retries() {
+  local attempt
+
+  for attempt in 1 2 3; do
+    if curl_with_timeouts "$@"; then
+      return 0
+    fi
+    ((attempt == 3)) || sleep "${CURL_RETRY_DELAY:-1}"
+  done
+  return 1
+}
+
 public_https_status() {
   local url="$1"
   local status
 
   [[ "${url}" == https://* ]] || return 1
-  status="$(curl_with_timeouts -sS -o /dev/null -w '%{http_code}' "${url}" 2>/dev/null)" \
+  status="$(curl_with_retries -sS -o /dev/null -w '%{http_code}' "${url}" 2>/dev/null)" \
     || return 1
   [[ "${status}" =~ ^[1-5][0-9][0-9]$ ]] || return 1
   printf '%s' "${status}"

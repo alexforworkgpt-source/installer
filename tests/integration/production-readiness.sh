@@ -55,17 +55,28 @@ cat > "${TEMP_ROOT}/bin/curl" <<'EOF'
 set -Eeuo pipefail
 printf '%s\n' "$*" >> "${PUBLIC_CURL_LOG}"
 [[ "${PUBLIC_CURL_CERT_FAILURE:-false}" != true ]] || exit 60
+if [[ "${PUBLIC_CURL_TRANSIENT_FAILURE:-false}" == true ]]; then
+  attempts_file="${PUBLIC_CURL_LOG}.attempts"
+  attempts="$(( $(cat "${attempts_file}" 2>/dev/null || printf '0') + 1 ))"
+  printf '%s\n' "${attempts}" > "${attempts_file}"
+  [[ "${attempts}" != "1" ]] || exit 28
+fi
 printf '200'
 EOF
 chmod +x "${TEMP_ROOT}/bin/curl"
 export PATH="${TEMP_ROOT}/bin:${PATH}"
 export PUBLIC_CURL_LOG="${TEMP_ROOT}/public-curl.log"
+export CURL_RETRY_DELAY=0
 
 [[ "$(public_https_status 'https://app.example.test/')" == 200 ]]
 if grep -Eq '(^|[[:space:]])-[^[:space:]]*k' "${PUBLIC_CURL_LOG}"; then
   printf '%s\n' 'Public HTTPS probe disabled certificate verification.' >&2
   exit 1
 fi
+export PUBLIC_CURL_TRANSIENT_FAILURE=true
+[[ "$(public_https_status 'https://app.example.test/')" == 200 ]]
+[[ "$(<"${PUBLIC_CURL_LOG}.attempts")" == 2 ]]
+unset PUBLIC_CURL_TRANSIENT_FAILURE
 export PUBLIC_CURL_CERT_FAILURE=true
 if public_https_status 'https://app.example.test/' >/dev/null; then
   printf '%s\n' 'Public HTTPS probe accepted a certificate failure.' >&2

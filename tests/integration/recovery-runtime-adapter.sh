@@ -156,7 +156,7 @@ exit 0
 EOF
 chmod +x "${FAKE_BIN}"/*
 export PATH="${FAKE_BIN}:${PATH}"
-export TELEGRAM_API_RETRY_DELAY=0
+export CURL_RETRY_DELAY=0
 
 bash "${SCRIPT_DIR}/lib/recovery_runtime.sh" quiesce "${PROJECT_ROOT}"
 [[ "$(<"${RECOVERY_FAKE_STATE}/bot")" == 'stopped' ]]
