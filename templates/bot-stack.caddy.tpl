@@ -22,6 +22,11 @@ __APP_DOMAIN__ {
     }
 
     route {
+        @health path /health/unified
+        handle @health {
+            reverse_proxy 127.0.0.1:__BOT_HTTP_PORT__
+        }
+
         @api path /api /api/*
         handle @api {
             uri strip_prefix /api

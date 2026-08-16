@@ -42,6 +42,7 @@ render_caddy_file
 
 grep -Fq '@telegram path /webhook' "${CADDY_CANDIDATE_FILE}"
 grep -Fq '@remnawave path /remnawave-webhook' "${CADDY_CANDIDATE_FILE}"
+grep -Fq '@health path /health/unified' "${CADDY_CANDIDATE_FILE}"
 grep -Fq 'respond 404' "${CADDY_CANDIDATE_FILE}"
 if grep -Eq '^    reverse_proxy ' "${CADDY_CANDIDATE_FILE}"; then
   printf '%s\n' 'Webhook host still proxies the complete backend.' >&2

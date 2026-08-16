@@ -169,7 +169,7 @@ check_cabinet_runtime_contract() {
   local unified
 
   branding="$(curl_with_timeouts -fsS "https://${APP_DOMAIN}/api/cabinet/branding")" || return 1
-  unified="$(curl_with_timeouts -fsS "http://127.0.0.1:${BOT_HTTP_PORT}/health/unified")" || return 1
+  unified="$(curl_with_timeouts -fsS "https://${APP_DOMAIN}/health/unified")" || return 1
   jq -e 'type == "object"' >/dev/null <<<"${branding}" || return 1
   jq -e \
     '.status == "ok"
