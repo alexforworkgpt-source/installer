@@ -57,6 +57,15 @@ class ReleaseBundlePublicationTests(unittest.TestCase):
                 f"FROM {node_image} AS builder\nFROM {nginx_image}\n",
             )
 
+    def test_release_build_disables_git_bash_path_conversion(self) -> None:
+        script = (
+            Path(__file__).resolve().parents[1]
+            / "scripts"
+            / "build-cabinet-release-artifact.sh"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("MSYS2_ARG_CONV_EXCL='VITE_API_URL=' docker build", script)
+
     def test_cabinet_archive_is_byte_for_byte_deterministic(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -79,6 +88,23 @@ class ReleaseBundlePublicationTests(unittest.TestCase):
             self.assertEqual(first_archive.read_bytes(), second_archive.read_bytes())
             self.assertEqual(first_checksum, second_checksum)
             verify_cabinet_artifact(first_archive, first_checksum)
+
+    def test_cabinet_archive_rejects_git_bash_path_conversion_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            cabinet_dist = root / "dist"
+            (cabinet_dist / "assets").mkdir(parents=True)
+            (cabinet_dist / "index.html").write_text("cabinet", encoding="utf-8")
+            (cabinet_dist / "assets" / "app.js").write_text(
+                'const apiBase = "C:/Program Files/Git/api";',
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValueError, "Git Bash path-conversion"):
+                create_deterministic_cabinet_archive(
+                    cabinet_dist,
+                    root / "cabinet-dist.tar.gz",
+                )
 
     def test_generated_manifest_uses_installer_release_assets_and_production_parser(
         self,

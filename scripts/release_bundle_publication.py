@@ -51,6 +51,14 @@ def create_deterministic_cabinet_archive(
     for entry in entries:
         if entry.is_symlink() or not (entry.is_file() or entry.is_dir()):
             raise ValueError(f"unsupported cabinet dist entry: {entry}")
+        if (
+            entry.is_file()
+            and entry.suffix in {".css", ".html", ".js", ".json"}
+            and b"Program Files/Git" in entry.read_bytes()
+        ):
+            raise ValueError(
+                f"cabinet dist contains a Git Bash path-conversion artifact: {entry}"
+            )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("wb") as raw_output:

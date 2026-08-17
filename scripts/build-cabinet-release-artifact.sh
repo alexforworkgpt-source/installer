@@ -39,7 +39,8 @@ python3 "${installer_root}/scripts/release_bundle_publication.py" \
   "${node_builder_image}" \
   "${nginx_runtime_image}"
 
-docker build \
+# Git Bash would otherwise rewrite the frontend URL `/api` as a Windows path.
+MSYS2_ARG_CONV_EXCL='VITE_API_URL=' docker build \
   --file "${work_dir}/Dockerfile.pinned" \
   --build-arg VITE_API_URL=/api \
   --build-arg VITE_TELEGRAM_BOT_USERNAME= \
