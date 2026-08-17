@@ -18,6 +18,8 @@ source "${SCRIPT_DIR}/lib/install.sh"
 source "${SCRIPT_DIR}/lib/configure.sh"
 # shellcheck source=lib/doctor.sh
 source "${SCRIPT_DIR}/lib/doctor.sh"
+# shellcheck source=lib/deploy.sh
+source "${SCRIPT_DIR}/lib/deploy.sh"
 
 assert_supported_os() { :; }
 check_bootstrap_resources() { :; }
@@ -82,6 +84,122 @@ if public_https_status 'https://app.example.test/' >/dev/null; then
   printf '%s\n' 'Public HTTPS probe accepted a certificate failure.' >&2
   exit 1
 fi
+unset PUBLIC_CURL_CERT_FAILURE
+
+# Runtime verification retries only short external transport failures after a
+# Caddy reload. Security failures remain fail-fast.
+HEALTH_ATTEMPTS_FILE="${TEMP_ROOT}/health-attempts"
+HEALTH_SLEEP_LOG="${TEMP_ROOT}/health-sleeps"
+printf '%s\n' 0 > "${HEALTH_ATTEMPTS_FILE}"
+: > "${HEALTH_SLEEP_LOG}"
+sleep() { printf '%s\n' "$1" >> "${HEALTH_SLEEP_LOG}"; }
+http_status_code() {
+  case "$1" in
+    http://127.0.0.1:18080/cabinet/branding) printf '%s' 200 ;;
+    https://app.example.test/api/cabinet/branding)
+      attempts="$(( $(<"${HEALTH_ATTEMPTS_FILE}") + 1 ))"
+      printf '%s\n' "${attempts}" > "${HEALTH_ATTEMPTS_FILE}"
+      if ((attempts < 3)); then
+        printf '%s' 000
+      else
+        printf '%s' 200
+      fi
+      ;;
+    https://app.example.test/) printf '%s' 200 ;;
+    https://hooks.example.test/) printf '%s' 404 ;;
+    *) return 1 ;;
+  esac
+}
+verify_private_runtime_ports() { :; }
+BOT_RUN_MODE=polling
+RUNTIME_HEALTH_RETRY_DELAY=3
+verify_runtime_health
+[[ "$(<"${HEALTH_ATTEMPTS_FILE}")" == 3 ]]
+[[ "$(paste -sd, "${HEALTH_SLEEP_LOG}")" == 3,3 ]]
+
+printf '%s\n' 0 > "${HEALTH_ATTEMPTS_FILE}"
+: > "${HEALTH_SLEEP_LOG}"
+http_status_code() {
+  case "$1" in
+    http://127.0.0.1:18080/cabinet/branding) printf '%s' 200 ;;
+    https://app.example.test/api/cabinet/branding)
+      attempts="$(( $(<"${HEALTH_ATTEMPTS_FILE}") + 1 ))"
+      printf '%s\n' "${attempts}" > "${HEALTH_ATTEMPTS_FILE}"
+      printf '%s' 000
+      ;;
+    https://app.example.test/) printf '%s' 200 ;;
+    https://hooks.example.test/) printf '%s' 404 ;;
+    *) return 1 ;;
+  esac
+}
+if verify_runtime_health; then
+  printf '%s\n' 'Runtime health accepted a persistent external API failure.' >&2
+  exit 1
+fi
+[[ "$(<"${HEALTH_ATTEMPTS_FILE}")" == 3 ]]
+[[ "$(paste -sd, "${HEALTH_SLEEP_LOG}")" == 3,3 ]]
+
+: > "${HEALTH_SLEEP_LOG}"
+HARD_CHECK_ATTEMPTS_FILE="${TEMP_ROOT}/hard-check-attempts"
+printf '%s\n' 0 > "${HARD_CHECK_ATTEMPTS_FILE}"
+http_status_code() {
+  case "$1" in
+    http://127.0.0.1:18080/cabinet/branding) printf '%s' 200 ;;
+    https://app.example.test/api/cabinet/branding)
+      attempts="$(( $(<"${HARD_CHECK_ATTEMPTS_FILE}") + 1 ))"
+      printf '%s\n' "${attempts}" > "${HARD_CHECK_ATTEMPTS_FILE}"
+      printf '%s' 200
+      ;;
+    https://app.example.test/) printf '%s' 200 ;;
+    https://hooks.example.test/) printf '%s' 200 ;;
+    *) return 1 ;;
+  esac
+}
+if verify_runtime_health; then
+  printf '%s\n' 'Runtime health retried an unsafe Hook response.' >&2
+  exit 1
+fi
+[[ ! -s "${HEALTH_SLEEP_LOG}" ]]
+[[ "$(<"${HARD_CHECK_ATTEMPTS_FILE}")" == 1 ]]
+
+PORT_CHECK_ATTEMPTS_FILE="${TEMP_ROOT}/port-check-attempts"
+printf '%s\n' 0 > "${PORT_CHECK_ATTEMPTS_FILE}"
+http_status_code() {
+  case "$1" in
+    http://127.0.0.1:18080/cabinet/branding) printf '%s' 200 ;;
+    https://app.example.test/api/cabinet/branding) printf '%s' 200 ;;
+    https://app.example.test/) printf '%s' 200 ;;
+    https://hooks.example.test/) printf '%s' 404 ;;
+    *) return 1 ;;
+  esac
+}
+verify_private_runtime_ports() {
+  attempts="$(( $(<"${PORT_CHECK_ATTEMPTS_FILE}") + 1 ))"
+  printf '%s\n' "${attempts}" > "${PORT_CHECK_ATTEMPTS_FILE}"
+  return 1
+}
+if verify_runtime_health; then
+  printf '%s\n' 'Runtime health retried unsafe runtime port bindings.' >&2
+  exit 1
+fi
+[[ ! -s "${HEALTH_SLEEP_LOG}" ]]
+[[ "$(<"${PORT_CHECK_ATTEMPTS_FILE}")" == 1 ]]
+
+WEBHOOK_CHECK_ATTEMPTS_FILE="${TEMP_ROOT}/webhook-check-attempts"
+printf '%s\n' 0 > "${WEBHOOK_CHECK_ATTEMPTS_FILE}"
+verify_private_runtime_ports() { :; }
+check_telegram_webhook_matches() {
+  attempts="$(( $(<"${WEBHOOK_CHECK_ATTEMPTS_FILE}") + 1 ))"
+  printf '%s\n' "${attempts}" > "${WEBHOOK_CHECK_ATTEMPTS_FILE}"
+  return 1
+}
+BOT_RUN_MODE=webhook
+if verify_runtime_health; then
+  printf '%s\n' 'Runtime health retried a mismatched Telegram webhook.' >&2
+  exit 1
+fi
+[[ ! -s "${HEALTH_SLEEP_LOG}" ]]
+[[ "$(<"${WEBHOOK_CHECK_ATTEMPTS_FILE}")" == 1 ]]
 
 # Caddy activation must restore the previous snippet when the public post-check fails.
 CADDY_SNIPPET_DIR="${TEMP_ROOT}/caddy"

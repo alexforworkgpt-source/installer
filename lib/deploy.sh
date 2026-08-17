@@ -345,7 +345,7 @@ telegram_webhook_summary() {
   jq -r 'if .ok == true then "\(.result.url // "не задан") | pending=\(.result.pending_update_count // 0) | last_error=\(.result.last_error_message // "-")" else "недоступно" end' <<<"${response}" 2>/dev/null || true
 }
 
-verify_runtime_health() {
+verify_runtime_health_once() {
   require_state_file
 
   local local_status
@@ -353,6 +353,7 @@ verify_runtime_health() {
   local app_front_status
   local hook_status
   local failures=0
+  local transient_failures=0
 
   local_status="$(http_status_code "http://127.0.0.1:${BOT_HTTP_PORT}/cabinet/branding")"
   app_api_status="$(http_status_code "https://${APP_DOMAIN}/api/cabinet/branding")"
@@ -360,9 +361,27 @@ verify_runtime_health() {
   hook_status="$(http_status_code "https://${HOOK_DOMAIN}/")"
 
   [[ "${local_status}" == "200" ]] || { log_warn "Локальный API вернул ${local_status:-n/a}"; ((failures++)); }
-  [[ "${app_api_status}" == "200" ]] || { log_warn "App API вернул ${app_api_status:-n/a}"; ((failures++)); }
-  [[ "${app_front_status}" == "200" ]] || { log_warn "App frontend вернул ${app_front_status:-n/a}"; ((failures++)); }
-  [[ "${hook_status}" == "404" ]] || { log_warn "Hook deny-by-default вернул ${hook_status:-n/a}"; ((failures++)); }
+  if [[ "${app_api_status}" == "000" ]]; then
+    log_warn "App API временно недоступен."
+    ((transient_failures++))
+  elif [[ "${app_api_status}" != "200" ]]; then
+    log_warn "App API вернул ${app_api_status:-n/a}"
+    ((failures++))
+  fi
+  if [[ "${app_front_status}" == "000" ]]; then
+    log_warn "App frontend временно недоступен."
+    ((transient_failures++))
+  elif [[ "${app_front_status}" != "200" ]]; then
+    log_warn "App frontend вернул ${app_front_status:-n/a}"
+    ((failures++))
+  fi
+  if [[ "${hook_status}" == "000" ]]; then
+    log_warn "Hook временно недоступен."
+    ((transient_failures++))
+  elif [[ "${hook_status}" != "404" ]]; then
+    log_warn "Hook deny-by-default вернул ${hook_status:-n/a}"
+    ((failures++))
+  fi
   verify_private_runtime_ports || { log_warn "Найдены небезопасные runtime port bindings."; ((failures++)); }
 
   if [[ "${BOT_RUN_MODE}" == "webhook" ]] && ! check_telegram_webhook_matches; then
@@ -373,8 +392,29 @@ verify_runtime_health() {
   if ((failures > 0)); then
     return 1
   fi
+  if ((transient_failures > 0)); then
+    return 75
+  fi
 
   return 0
+}
+
+verify_runtime_health() {
+  local attempt
+  local status
+
+  for attempt in 1 2 3; do
+    if verify_runtime_health_once; then
+      return 0
+    else
+      status=$?
+    fi
+    if [[ "${status}" != 75 ]]; then
+      return "${status}"
+    fi
+    ((attempt == 3)) || sleep "${RUNTIME_HEALTH_RETRY_DELAY:-3}"
+  done
+  return 75
 }
 
 wait_for_runtime_ready() {
