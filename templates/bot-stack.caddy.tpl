@@ -46,15 +46,16 @@ __APP_DOMAIN__ {
             file_server
         }
 
+        @cabinet_assets path /assets/*
+        handle @cabinet_assets {
+            root * __CABINET_DIST_DIR__
+            header Cache-Control "public, max-age=31536000, immutable"
+            file_server
+        }
+
         handle {
             root * __CABINET_DIST_DIR__
-
-            @static path *.js *.css *.woff *.woff2 *.ttf *.ico *.png *.jpg *.jpeg *.svg *.webp *.gif
-            header @static Cache-Control "public, max-age=31536000, immutable"
-
-            @html path / *.html
-            header @html Cache-Control "no-cache, must-revalidate"
-
+            header Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
             try_files {path} /index.html
             file_server
         }

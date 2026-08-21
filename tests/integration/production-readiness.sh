@@ -46,6 +46,13 @@ grep -Fq '@telegram path /webhook' "${CADDY_CANDIDATE_FILE}"
 grep -Fq '@remnawave path /remnawave-webhook' "${CADDY_CANDIDATE_FILE}"
 grep -Fq '@health path /health/unified' "${CADDY_CANDIDATE_FILE}"
 grep -Fq 'respond 404' "${CADDY_CANDIDATE_FILE}"
+grep -Fq '@cabinet_assets path /assets/*' "${CADDY_CANDIDATE_FILE}"
+grep -Fq 'Cache-Control "public, max-age=31536000, immutable"' "${CADDY_CANDIDATE_FILE}"
+grep -Fq 'header Cache-Control "no-store, no-cache, must-revalidate, max-age=0"' "${CADDY_CANDIDATE_FILE}"
+if grep -Fq '@static path' "${CADDY_CANDIDATE_FILE}"; then
+  printf '%s\n' 'Cabinet static matcher can cache an HTML fallback as immutable.' >&2
+  exit 1
+fi
 if grep -Eq '^    reverse_proxy ' "${CADDY_CANDIDATE_FILE}"; then
   printf '%s\n' 'Webhook host still proxies the complete backend.' >&2
   exit 1
