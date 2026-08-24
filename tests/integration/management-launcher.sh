@@ -29,6 +29,7 @@ printf '%s\n' '#!/usr/bin/env bash' 'printf installed-launcher-ok' > "${source_c
 printf '%s\n' 'helper-content' > "${source_clone}/lib/helper.sh"
 printf '%s\n' 'private-state' > "${source_clone}/state/private.txt"
 printf '%s\n' 'must-not-copy' > "${source_clone}/server.env"
+printf '%s\n' 'must-not-copy' > "${source_clone}/.integration.env"
 
 INSTALLER_DIR="${source_clone}"
 installed_script="$(install_management_copy "${installer_home}")"
@@ -39,6 +40,12 @@ write_menu_launcher "${launcher}" "${installed_script}"
 [[ -f "${installer_home}/current/lib/helper.sh" ]]
 [[ ! -e "${installer_home}/current/state/private.txt" ]]
 [[ ! -e "${installer_home}/current/server.env" ]]
+[[ ! -e "${installer_home}/current/.integration.env" ]]
+[[ -z "$(find "${installer_home}/releases" -type f -name '.integration.env' -print -quit)" ]]
+
+printf '%s\n' 'changed-private-value' > "${source_clone}/.integration.env"
+install_management_copy "${installer_home}" >/dev/null
+[[ "$(find "${installer_home}/releases" -mindepth 1 -maxdepth 1 -type d | wc -l)" == 1 ]]
 
 printf '%s\n' 'updated-helper-content' > "${source_clone}/lib/helper.sh"
 install_management_copy "${installer_home}" >/dev/null

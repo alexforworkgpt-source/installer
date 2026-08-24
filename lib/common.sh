@@ -658,6 +658,7 @@ installer_source_identity() {
         -o -type f \
            ! -path './server.env' \
            ! -path './env.txt' \
+           ! -path './.integration.env' \
            ! -name '*.pyc' \
            -print0 \
         | sort -z \
@@ -697,6 +698,7 @@ install_management_copy() {
         --exclude='./state' \
         --exclude='./server.env' \
         --exclude='./env.txt' \
+        --exclude='./.integration.env' \
         --exclude='./.playwright-mcp' \
         --exclude='*/__pycache__' \
         --exclude='*.pyc' \
