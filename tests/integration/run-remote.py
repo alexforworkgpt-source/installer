@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import hashlib
 import re
 import shlex
@@ -214,10 +214,10 @@ def remote_environment(config: dict[str, str]) -> bytes:
 
 
 def compose_project_name(project_root: str) -> str:
-    root = Path(project_root)
+    root = PurePosixPath(project_root)
     slug = re.sub(r"[^a-z0-9_-]+", "-", root.name.lower()).strip("-_")
     slug = (slug or "stack")[:32]
-    digest = hashlib.sha256(str(root).encode("utf-8")).hexdigest()[:8]
+    digest = hashlib.sha256(project_root.encode("utf-8")).hexdigest()[:8]
     return f"bedolaga-{slug}-{digest}"
 
 
