@@ -28,6 +28,18 @@ printf '%s\n' running > "${BOT_STATE_FILE}"
 printf '%s\n' old > "${CONTEXT_DIR}/previous-cabinet/index.html"
 printf '%s\n' new > "${CONTEXT_DIR}/cabinet-dist.tar.gz"
 printf '%s\n' current > "${PROJECT_ROOT}/runtime/cabinet-dist/index.html"
+cat > "${CONTEXT_DIR}/previous-migration-image.override.yml" <<'EOF'
+name: "legacy-project"
+services:
+  postgres:
+    image: "postgres:legacy-exact"
+  redis:
+    image: "redis:legacy-exact"
+  bot:
+    image: "bot:legacy-exact"
+EOF
+cp "${CONTEXT_DIR}/previous-migration-image.override.yml" \
+  "${STATE_DIR}/migration-image.override.yml"
 
 write_value() {
   printf '%s\n' "$2" > "${CONTEXT_DIR}/$1"
@@ -161,6 +173,7 @@ dump_reference="$(run_create_dump_stage)"
 grep -Fq "recovery_point=${dump_reference}" "${marker_file}"
 
 run_apply_release_stage
+[[ ! -e "${STATE_DIR}/migration-image.override.yml" ]]
 REVISION="rev-new"
 run_verify_release_stage
 [[ "$(run_current_revision_stage)" == rev-new ]]
@@ -178,6 +191,8 @@ grep -Fq 'after_revision=rev-new' "${CONTEXT_DIR}/verified.metadata.txt"
 write_update_marker "${dump_reference}"
 printf '%s\n' running > "${BOT_STATE_FILE}"
 run_rollback_release_stage
+cmp "${CONTEXT_DIR}/previous-migration-image.override.yml" \
+  "${STATE_DIR}/migration-image.override.yml"
 [[ "$(<"${TEMP_ROOT}/saved-cabinet-repository")" == https://example.test/upstream-cabinet.git ]]
 run_restore_dump_stage "${dump_reference}" rev-old
 run_verify_rollback_stage release-old rev-old "${dump_reference}"

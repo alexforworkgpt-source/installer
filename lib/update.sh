@@ -549,9 +549,26 @@ write_protected_update_context_value() {
   secure_private_file "${target}"
 }
 
+protect_completed_migration_image_override() {
+  local context_dir="$1"
+  local active_override="${STATE_DIR}/migration-image.override.yml"
+  local protected_override="${context_dir}/previous-migration-image.override.yml"
+
+  [[ -f "${active_override}" ]] || return 0
+  [[ ! -L "${active_override}" ]] || return 1
+  [[ -d "${context_dir}" && ! -L "${context_dir}" ]] || return 1
+  path_is_under "${STATE_DIR}" "${context_dir}" || return 1
+  [[ ! -e "${protected_override}" ]] || return 1
+  cp "${active_override}" "${protected_override}" || return 1
+  secure_private_file "${protected_override}" || return 1
+  sync -f "${protected_override}"
+  sync -f "${context_dir}"
+}
+
 update_from_release_bundle_once() {
   ensure_root
   require_state_file
+  adopt_completed_migration_runtime_identity
   command_exists jq || die "Для Release Bundle требуется jq."
 
   local manifest_source
@@ -663,6 +680,8 @@ update_from_release_bundle_once() {
   if [[ -d "${CABINET_DIST_DIR}" ]]; then
     cp -a "${CABINET_DIST_DIR}" "${previous_cabinet_dir}"
   fi
+  protect_completed_migration_image_override "${work_dir}" \
+    || die "Не удалось защитить completed migration image override. Runtime не изменён."
 
   echo "Release Bundle: ${release}"
   echo "Bot SHA:        ${bot_sha}"

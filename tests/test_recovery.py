@@ -385,6 +385,61 @@ class RecoveryTests(unittest.TestCase):
 
             self.assertEqual(artifact.project_root, project_root)
 
+    def test_validation_accepts_exact_current_legacy_runtime_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            project_root = root / "project"
+            state_dir = project_root / "state"
+            state_dir.mkdir(parents=True)
+            legacy_project = "bedolaga-232719bb124c"
+            legacy_caddy = "/etc/caddy/conf.d/bot-stack.caddy"
+            current_state = (
+                f"PROJECT_ROOT={project_root}\n"
+                f"COMPOSE_PROJECT_NAME={legacy_project}\n"
+                "CADDY_SNIPPET_DIR=/etc/caddy/conf.d\n"
+                f"CADDY_SNIPPET_FILE={legacy_caddy}\n"
+            )
+            (state_dir / "install.state").write_text(
+                current_state,
+                encoding="utf-8",
+            )
+            archive = root / "legacy-runtime-file-backup.tar.gz"
+            create_file_backup_fixture(
+                archive,
+                project_root,
+                {"project/state/install.state": current_state.encode()},
+            )
+
+            artifact = validate_file_backup(archive, project_root)
+
+            self.assertEqual(artifact.project_root, project_root)
+
+    def test_validation_rejects_untrusted_legacy_runtime_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            project_root = root / "project"
+            state_dir = project_root / "state"
+            state_dir.mkdir(parents=True)
+            (state_dir / "install.state").write_text(
+                f"PROJECT_ROOT={project_root}\n"
+                "COMPOSE_PROJECT_NAME=bedolaga-trusted-project\n",
+                encoding="utf-8",
+            )
+            archive = root / "untrusted-runtime-file-backup.tar.gz"
+            create_file_backup_fixture(
+                archive,
+                project_root,
+                {
+                    "project/state/install.state": (
+                        f"PROJECT_ROOT={project_root}\n"
+                        "COMPOSE_PROJECT_NAME=bedolaga-other-project\n"
+                    ).encode()
+                },
+            )
+
+            with self.assertRaisesRegex(RecoveryError, "COMPOSE_PROJECT_NAME"):
+                validate_file_backup(archive, project_root)
+
     def test_recovery_invalidates_transient_state_but_keeps_user_override(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

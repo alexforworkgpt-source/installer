@@ -11,6 +11,7 @@ STATE_FILE="/opt/bot-stack/state/install.state"
 ENV_HELPER="${INSTALLER_DIR}/lib/env_helper.py"
 RECOVERY_HELPER="${INSTALLER_DIR}/lib/recovery.py"
 RECOVERY_RUNTIME_ADAPTER="${INSTALLER_DIR}/lib/recovery_runtime.sh"
+MIGRATION_RUNTIME_HELPER="${INSTALLER_DIR}/lib/migration_runtime.py"
 
 DEFAULT_PROJECT_ROOT="/opt/bot-stack"
 DEFAULT_BOT_REPO_URL="https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git"
@@ -1953,6 +1954,81 @@ migrate_legacy_state_if_needed() {
   fi
 
   STATE_FILE="${runtime_state_file}"
+}
+
+adopt_completed_migration_runtime_identity() {
+  local resource_marker="${PROJECT_ROOT}/.migration-resources-created"
+  local completed_marker="${STATE_DIR}/migration.completed"
+  local override_file="${STATE_DIR}/migration-image.override.yml"
+  local assignments
+  local service
+  local expected_image
+  local container_ids
+  local container_id
+  local actual_image
+  local expected_volume
+  local expected_destination
+  local actual_mounts
+
+  if [[ ! -e "${resource_marker}" && ! -e "${completed_marker}" && ! -e "${override_file}" ]]; then
+    return 0
+  fi
+  [[ -f "${resource_marker}" && ! -L "${resource_marker}" ]] \
+    || die "Completed migration resource marker отсутствует или небезопасен."
+  [[ -f "${completed_marker}" && ! -L "${completed_marker}" ]] \
+    || die "Completed migration marker отсутствует или небезопасен."
+  [[ ! -L "${override_file}" ]] \
+    || die "Completed migration image override небезопасен."
+
+  assignments="$(run_python "${MIGRATION_RUNTIME_HELPER}" inspect "${PROJECT_ROOT}")" \
+    || die "Не удалось проверить identity завершенного migration import."
+  eval "${assignments}"
+
+  for service in bot postgres redis; do
+    case "${service}" in
+      bot) expected_image="${MIGRATION_BOT_IMAGE}" ;;
+      postgres) expected_image="${POSTGRES_IMAGE}" ;;
+      redis) expected_image="${REDIS_IMAGE}" ;;
+    esac
+    container_ids="$(docker ps -aq \
+      --filter "label=com.docker.compose.project=${COMPOSE_PROJECT_NAME}" \
+      --filter "label=com.docker.compose.service=${service}")"
+    [[ "$(printf '%s\n' "${container_ids}" | sed '/^$/d' | wc -l)" -eq 1 ]] \
+      || die "Completed migration runtime не имеет ровно один container ${service}."
+    container_id="$(printf '%s\n' "${container_ids}" | sed '/^$/d')"
+    actual_image="$(docker inspect --format '{{.Config.Image}}' "${container_id}")"
+    if [[ -n "${expected_image}" ]]; then
+      [[ "${actual_image}" == "${expected_image}" ]] \
+        || die "Completed migration ${service} image не совпадает с runtime."
+    fi
+    case "${service}" in
+      postgres)
+        expected_volume="${COMPOSE_PROJECT_NAME}_postgres_data"
+        expected_destination="/var/lib/postgresql/data"
+        ;;
+      redis)
+        expected_volume="${COMPOSE_PROJECT_NAME}_redis_data"
+        expected_destination="/data"
+        ;;
+      *) continue ;;
+    esac
+    actual_mounts="$(docker inspect --format '{{range .Mounts}}{{printf "%s=%s\n" .Destination .Name}}{{end}}' "${container_id}")"
+    grep -Fxq "${expected_destination}=${expected_volume}" <<<"${actual_mounts}" \
+      || die "Completed migration ${service} volume не подключен к runtime."
+  done
+  docker volume inspect "${COMPOSE_PROJECT_NAME}_postgres_data" >/dev/null \
+    || die "Completed migration PostgreSQL volume не найден."
+  docker volume inspect "${COMPOSE_PROJECT_NAME}_redis_data" >/dev/null \
+    || die "Completed migration Redis volume не найден."
+
+  if [[ "${MIGRATION_IMAGE_OVERRIDE_PRESENT}" == true ]]; then
+    assignments="$(run_python "${MIGRATION_RUNTIME_HELPER}" adopt "${PROJECT_ROOT}")" \
+      || die "Не удалось сохранить identity завершенного migration import."
+    eval "${assignments}"
+    if [[ "${MIGRATION_RUNTIME_IDENTITY_ADOPTED}" == true ]]; then
+      log_info "Completed migration runtime identity сохранена. Safety backup: ${MIGRATION_RUNTIME_IDENTITY_BACKUP}"
+    fi
+  fi
 }
 
 save_state() {

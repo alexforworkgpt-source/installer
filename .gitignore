@@ -1,6 +1,7 @@
 state/*
 !state/.gitkeep
 /server.env
+/server.prod.env
 /env.txt
 /architecture-review-verified.png
 __pycache__/

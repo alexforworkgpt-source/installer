@@ -148,12 +148,38 @@ def _parse_state(content: bytes) -> dict[str, str]:
     return state
 
 
+def _trusted_current_state(project_root: Path) -> dict[str, str]:
+    current_state_path = project_root / "state/install.state"
+    if not current_state_path.is_file() or current_state_path.is_symlink():
+        return {}
+    try:
+        if current_state_path.stat().st_size > MAX_CONTROL_FILE_BYTES:
+            return {}
+        state = _parse_state(current_state_path.read_bytes())
+    except (OSError, RecoveryError):
+        return {}
+    if state.get("PROJECT_ROOT") != str(project_root):
+        return {}
+    return state
+
+
+def _safe_caddy_snippet_path(value: str) -> bool:
+    path = PurePosixPath(value)
+    return (
+        path.is_absolute()
+        and path.parent == PurePosixPath("/etc/caddy/conf.d")
+        and path.name.endswith(".caddy")
+        and path.name not in {".caddy", "..caddy"}
+    )
+
+
 def _validate_state_paths(content: bytes, project_root: Path) -> None:
     state = _parse_state(content)
     if state.get("PROJECT_ROOT") != str(project_root):
         raise RecoveryError("file backup state belongs to another project root")
 
     expected_compose_project = _compose_project_name(project_root)
+    trusted_current = _trusted_current_state(project_root)
     expected_paths = {
         "REPOS_DIR": project_root / "repos",
         "RUNTIME_DIR": project_root / "runtime",
@@ -175,9 +201,23 @@ def _validate_state_paths(content: bytes, project_root: Path) -> None:
         "CADDY_SNIPPET_FILE": f"/etc/caddy/conf.d/{expected_compose_project}.caddy",
     }
     for key, expected_path in expected_paths.items():
-        if key in state and state[key] != str(expected_path):
-            raise RecoveryError(f"file backup install.state has unsafe {key}")
-    if state.get("COMPOSE_PROJECT_NAME", expected_compose_project) != expected_compose_project:
+        if key not in state or state[key] == str(expected_path):
+            continue
+        if (
+            key == "CADDY_SNIPPET_FILE"
+            and state[key] == trusted_current.get(key)
+            and _safe_caddy_snippet_path(state[key])
+        ):
+            continue
+        raise RecoveryError(f"file backup install.state has unsafe {key}")
+
+    actual_compose_project = state.get("COMPOSE_PROJECT_NAME", expected_compose_project)
+    trusted_compose_project = trusted_current.get("COMPOSE_PROJECT_NAME", "")
+    trusted_legacy_project = (
+        actual_compose_project == trusted_compose_project
+        and re.fullmatch(r"[a-z0-9][a-z0-9_-]*", actual_compose_project) is not None
+    )
+    if actual_compose_project != expected_compose_project and not trusted_legacy_project:
         raise RecoveryError("file backup install.state has unsafe COMPOSE_PROJECT_NAME")
 
 

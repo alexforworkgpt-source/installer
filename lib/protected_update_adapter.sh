@@ -108,6 +108,36 @@ restore_previous_release_variables() {
   CABINET_VERSION_REF="$(context_value previous-cabinet-sha)"
 }
 
+suspend_previous_migration_image_override() {
+  local protected_override="${context_dir}/previous-migration-image.override.yml"
+  local active_override="${STATE_DIR}/migration-image.override.yml"
+
+  if [[ ! -f "${protected_override}" ]]; then
+    [[ ! -e "${active_override}" ]]
+    return
+  fi
+  [[ -f "${active_override}" && ! -L "${active_override}" ]] || return 1
+  cmp "${protected_override}" "${active_override}" >/dev/null || return 1
+  rm -f "${active_override}"
+  sync -f "${STATE_DIR}"
+}
+
+restore_previous_migration_image_override() {
+  local protected_override="${context_dir}/previous-migration-image.override.yml"
+  local active_override="${STATE_DIR}/migration-image.override.yml"
+  local temporary="${active_override}.rollback"
+
+  if [[ ! -f "${protected_override}" ]]; then
+    rm -f "${active_override}"
+    return
+  fi
+  cp "${protected_override}" "${temporary}" || return 1
+  secure_private_file "${temporary}" || return 1
+  mv -f "${temporary}" "${active_override}" || return 1
+  sync -f "${active_override}"
+  sync -f "${STATE_DIR}"
+}
+
 run_create_dump_stage() {
   local dump_reference
   local snapshot_reference
@@ -184,6 +214,7 @@ run_apply_release_stage() {
   REDIS_IMAGE="$(context_value target-redis-image)"
   BOT_VERSION_REF="$(context_value target-bot-sha)"
   CABINET_VERSION_REF="$(context_value target-cabinet-sha)"
+  suspend_previous_migration_image_override
   render_compose_file
   compose_cmd config -q
   compose_cmd up -d --build --wait --wait-timeout 180 postgres redis bot
@@ -252,6 +283,7 @@ run_rollback_release_stage() {
   else
     mkdir -p "${CABINET_DIST_DIR}"
   fi
+  restore_previous_migration_image_override
   save_state
   sync -f "${STATE_FILE}"
   sync -f "${STATE_DIR}"
@@ -307,6 +339,9 @@ run_verify_commit_stage() {
   CABINET_VERSION_REF="$(context_value target-cabinet-sha)"
   verify_release_checkout "${BOT_REPO_DIR}" "${BOT_VERSION_REF}"
   verify_release_checkout "${CABINET_REPO_DIR}" "${CABINET_VERSION_REF}"
+  if [[ -f "${context_dir}/previous-migration-image.override.yml" ]]; then
+    [[ ! -e "${STATE_DIR}/migration-image.override.yml" ]]
+  fi
   [[ "$(current_alembic_revision)" == "$(context_value after-revision)" ]]
   wait_for_runtime_ready 60 3
   verify_runtime_health

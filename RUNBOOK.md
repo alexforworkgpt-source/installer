@@ -188,6 +188,32 @@ process arguments; context удаляется после committed/rolled-back �
 - при обновлении обоих компонентов bot и cabinet применяются как одна группа
 - если групповое обновление падает, установщик откатывает оба компонента на предыдущие версии
 
+### Первый Bundle update после legacy migration import
+
+Установка, перенесённая прежним Installer, может хранить Compose project и
+точные импортированные PostgreSQL/Redis images только в
+`.migration-resources-created` и `state/migration-image.override.yml`, без этих
+полей в `install.state`. Перед первым Release Bundle update новый Installer:
+
+1. сверяет marker, override, фактические Docker containers, их images и оба
+   volumes;
+2. создаёт private safety backup в `state/migration-backups/`;
+3. атомарно сохраняет точные `COMPOSE_PROJECT_NAME`, `POSTGRES_IMAGE` и
+   `REDIS_IMAGE` в `install.state`, не перезапуская runtime;
+4. копирует migration override в protected update context;
+5. применяет immutable images из Bundle без override;
+6. при rollback восстанавливает прежний override byte-for-byte до запуска
+   предыдущего runtime.
+
+После успешного перехода migration markers остаются как provenance, а override
+больше не нужен. При следующих Bundle update Installer сверяет marker с
+`install.state`, фактическими containers, images и volumes и продолжает update
+без повторного импорта legacy images.
+
+Несовпадение хотя бы одной identity останавливает update до изменения runtime.
+Не удаляйте migration markers или override вручную: они являются доказательством
+происхождения существующих volumes и источником автоматического rollback.
+
 ### Обновление Installer перед schema v2
 
 Schema v2 добавляет `cabinet.repository` в проверяемую identity Release Bundle.
