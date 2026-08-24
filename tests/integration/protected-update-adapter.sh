@@ -80,8 +80,13 @@ CABINET_REPO_DIR="${PROJECT_ROOT}/repos/cabinet"
 BOT_REPO_URL="https://example.test/bot.git"
 CABINET_REPO_URL="https://example.test/cabinet.git"
 CABINET_DIST_DIR="${PROJECT_ROOT}/runtime/cabinet-dist"
+CADDY_CANDIDATE_FILE="${STATE_DIR}/bot-stack.caddy"
+CADDY_SNIPPET_DIR="${TEMP_ROOT}"
+CADDY_SNIPPET_FILE="${TEMP_ROOT}/live-bot-stack.caddy"
 REVISION="rev-old"
 INJECTED_STAGE=""
+printf '%s\n' old-caddy > "${CADDY_CANDIDATE_FILE}"
+printf '%s\n' old-caddy > "${CADDY_SNIPPET_FILE}"
 
 secure_private_file() { chmod 600 "$1"; }
 file_sha256() { sha256sum "$1" | awk '{print $1}'; }
@@ -113,8 +118,10 @@ create_verified_update_dump() {
   printf '%s' "${dump}"
 }
 create_update_snapshot() {
-  LAST_CREATED_SNAPSHOT_DIR="${CONTEXT_DIR}/snapshot"
+  LAST_CREATED_SNAPSHOT_DIR="${STATE_DIR}/snapshots/test-snapshot"
   mkdir -p "${LAST_CREATED_SNAPSHOT_DIR}"
+  cp "${CADDY_CANDIDATE_FILE}" "${LAST_CREATED_SNAPSHOT_DIR}/bot-stack.caddy.candidate"
+  cp "${CADDY_SNIPPET_FILE}" "${LAST_CREATED_SNAPSHOT_DIR}/bot-stack.caddy.live"
 }
 activate_current_runtime_once() { printf '%s\n' running > "${BOT_STATE_FILE}"; }
 checkout_repo_ref() {
@@ -126,7 +133,17 @@ run_python() {
   [[ "${INJECTED_STAGE}" != cabinet ]] || return 1
   printf '%s\n' activate-cabinet >> "${ORDER_LOG}"
 }
-render_compose_file() { printf '%s\n' render-compose >> "${ORDER_LOG}"; }
+render_compose_file() {
+  printf 'render-compose:%s:%s\n' "${1:-missing}" "${2:-missing}" >> "${ORDER_LOG}"
+}
+render_caddy_file() {
+  printf '%s\n' new-caddy > "${CADDY_CANDIDATE_FILE}"
+  printf '%s\n' render-caddy >> "${ORDER_LOG}"
+}
+install_caddy_candidate() {
+  cp "${CADDY_CANDIDATE_FILE}" "${CADDY_SNIPPET_FILE}"
+  printf '%s\n' install-caddy >> "${ORDER_LOG}"
+}
 reload_caddy() {
   [[ "${INJECTED_STAGE}" != caddy ]] || return 1
   printf '%s\n' caddy >> "${ORDER_LOG}"
@@ -174,6 +191,12 @@ grep -Fq "recovery_point=${dump_reference}" "${marker_file}"
 
 run_apply_release_stage
 [[ ! -e "${STATE_DIR}/migration-image.override.yml" ]]
+grep -Fxq \
+  'render-compose:postgres@sha256:new:redis@sha256:new' \
+  "${ORDER_LOG}"
+grep -Fxq render-caddy "${ORDER_LOG}"
+grep -Fxq install-caddy "${ORDER_LOG}"
+[[ "$(<"${CADDY_SNIPPET_FILE}")" == new-caddy ]]
 REVISION="rev-new"
 run_verify_release_stage
 [[ "$(run_current_revision_stage)" == rev-new ]]
@@ -193,9 +216,14 @@ printf '%s\n' running > "${BOT_STATE_FILE}"
 run_rollback_release_stage
 cmp "${CONTEXT_DIR}/previous-migration-image.override.yml" \
   "${STATE_DIR}/migration-image.override.yml"
+[[ "$(<"${CADDY_CANDIDATE_FILE}")" == old-caddy ]]
+[[ "$(<"${CADDY_SNIPPET_FILE}")" == old-caddy ]]
 [[ "$(<"${TEMP_ROOT}/saved-cabinet-repository")" == https://example.test/upstream-cabinet.git ]]
 run_restore_dump_stage "${dump_reference}" rev-old
 run_verify_rollback_stage release-old rev-old "${dump_reference}"
+rollback_start_line="$(grep -n -m1 '^start-bot$' "${ORDER_LOG}" | cut -d: -f1)"
+rollback_caddy_line="$(grep -n -m1 '^caddy$' "${ORDER_LOG}" | cut -d: -f1)"
+((rollback_start_line < rollback_caddy_line))
 grep -Fq 'recovery_point=rolled-back' "${marker_file}"
 run_finalize_terminal_stage rolled-back
 [[ ! -f "${marker_file}" ]]

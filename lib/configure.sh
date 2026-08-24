@@ -215,7 +215,16 @@ render_bot_env() {
 }
 
 render_compose_file() {
+  local requested_postgres_image="${1:-}"
+  local requested_redis_image="${2:-}"
+
   require_state_file
+  if [[ -n "${requested_postgres_image}" ]]; then
+    POSTGRES_IMAGE="${requested_postgres_image}"
+  fi
+  if [[ -n "${requested_redis_image}" ]]; then
+    REDIS_IMAGE="${requested_redis_image}"
+  fi
 
   render_template \
     "${INSTALLER_DIR}/templates/docker-compose.yml.tpl" \

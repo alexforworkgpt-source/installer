@@ -96,6 +96,17 @@ done
 grep -Fq '127.0.0.1:18080:8080' "${TEMP_ROOT}/one.yml"
 grep -Fq '127.0.0.1:28080:8080' "${TEMP_ROOT}/two.yml"
 
+COMPOSE_FILE="${TEMP_ROOT}/target-images.yml"
+render_compose_file \
+  'postgres@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc' \
+  'redis@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd'
+grep -Fq \
+  'postgres@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc' \
+  "${COMPOSE_FILE}"
+grep -Fq \
+  'redis@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd' \
+  "${COMPOSE_FILE}"
+
 PROJECT_ROOT="${TEMP_ROOT}/project-one"
 reset_project_root_paths
 set_runtime_paths

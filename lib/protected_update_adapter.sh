@@ -138,6 +138,45 @@ restore_previous_migration_image_override() {
   sync -f "${STATE_DIR}"
 }
 
+restore_previous_caddy_files() {
+  local snapshot_reference
+  local candidate_present
+  local live_present
+  local snapshot_candidate
+  local snapshot_live
+  local candidate_temporary="${CADDY_CANDIDATE_FILE}.rollback"
+  local live_temporary="${CADDY_SNIPPET_FILE}.protected-update-rollback"
+
+  snapshot_reference="$(context_value snapshot-reference)"
+  candidate_present="$(context_value previous-caddy-candidate-present)"
+  live_present="$(context_value previous-caddy-live-present)"
+  [[ "${snapshot_reference}" == "${STATE_DIR}"/snapshots/* ]]
+  [[ -d "${snapshot_reference}" && ! -L "${snapshot_reference}" ]]
+  [[ "${candidate_present}" == true || "${candidate_present}" == false ]]
+  [[ "${live_present}" == true || "${live_present}" == false ]]
+
+  snapshot_candidate="${snapshot_reference}/bot-stack.caddy.candidate"
+  snapshot_live="${snapshot_reference}/bot-stack.caddy.live"
+  if [[ "${candidate_present}" == true ]]; then
+    [[ -f "${snapshot_candidate}" && ! -L "${snapshot_candidate}" ]] || return 1
+    cp "${snapshot_candidate}" "${candidate_temporary}" || return 1
+    secure_private_file "${candidate_temporary}" || return 1
+    mv -f "${candidate_temporary}" "${CADDY_CANDIDATE_FILE}" || return 1
+  else
+    rm -f "${CADDY_CANDIDATE_FILE}"
+  fi
+  if [[ "${live_present}" == true ]]; then
+    [[ -f "${snapshot_live}" && ! -L "${snapshot_live}" ]] || return 1
+    cp "${snapshot_live}" "${live_temporary}" || return 1
+    chmod 644 "${live_temporary}" || return 1
+    mv -f "${live_temporary}" "${CADDY_SNIPPET_FILE}" || return 1
+  else
+    rm -f "${CADDY_SNIPPET_FILE}"
+  fi
+  sync -f "${STATE_DIR}"
+  sync -f "${CADDY_SNIPPET_DIR}"
+}
+
 run_create_dump_stage() {
   local dump_reference
   local snapshot_reference
@@ -152,6 +191,16 @@ run_create_dump_stage() {
   create_update_snapshot "release-bundle-$(context_value target-release)" >&2 || return 1
   snapshot_reference="${LAST_CREATED_SNAPSHOT_DIR}"
   write_context_value snapshot-reference "${snapshot_reference}"
+  if [[ -f "${CADDY_CANDIDATE_FILE}" ]]; then
+    write_context_value previous-caddy-candidate-present true
+  else
+    write_context_value previous-caddy-candidate-present false
+  fi
+  if [[ -f "${CADDY_SNIPPET_FILE}" ]]; then
+    write_context_value previous-caddy-live-present true
+  else
+    write_context_value previous-caddy-live-present false
+  fi
   write_update_marker "${dump_reference}"
   printf '%s\n' "${dump_reference}"
 }
@@ -215,9 +264,11 @@ run_apply_release_stage() {
   BOT_VERSION_REF="$(context_value target-bot-sha)"
   CABINET_VERSION_REF="$(context_value target-cabinet-sha)"
   suspend_previous_migration_image_override
-  render_compose_file
+  render_compose_file "${POSTGRES_IMAGE}" "${REDIS_IMAGE}"
   compose_cmd config -q
   compose_cmd up -d --build --wait --wait-timeout 180 postgres redis bot
+  render_caddy_file
+  install_caddy_candidate
   reload_caddy
   apply_telegram_runtime_mode
 }
@@ -284,6 +335,7 @@ run_rollback_release_stage() {
     mkdir -p "${CABINET_DIST_DIR}"
   fi
   restore_previous_migration_image_override
+  restore_previous_caddy_files
   save_state
   sync -f "${STATE_FILE}"
   sync -f "${STATE_DIR}"
@@ -314,14 +366,16 @@ run_verify_rollback_stage() {
   [[ "${previous_release}" == "$(context_value previous-release-key)" ]]
   [[ "${dump_reference}" == "$(context_value dump-reference)" ]]
   restore_previous_release_variables
-  reload_caddy
-  apply_telegram_runtime_mode
   if [[ "$(context_value previous-bot-running)" == true ]]; then
     compose_cmd up -d --build --wait --wait-timeout 180 bot
+    reload_caddy
+    apply_telegram_runtime_mode
     wait_for_runtime_ready 60 3
     verify_runtime_health
   else
     safe_stop_bot_and_verify
+    reload_caddy skip-public-postcheck
+    apply_telegram_runtime_mode
   fi
   [[ "$(current_alembic_revision)" == "${before_revision}" ]]
   save_state
