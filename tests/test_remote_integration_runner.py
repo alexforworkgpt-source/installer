@@ -43,6 +43,33 @@ class RemoteIntegrationRunnerTests(unittest.TestCase):
             self.assertNotIn("server.env", names)
             self.assertNotIn("env.txt", names)
 
+    def test_remote_environment_forwards_release_manifest_source(self) -> None:
+        manifest_source = (
+            "https://github.com/example/installer/releases/download/"
+            "test-candidate/release.json"
+        )
+        config = {
+            "RUN_INSTALLER_INTEGRATION": "1",
+            "TEST_PROJECT_ROOT": "/opt/bot-stack-integration",
+            "TEST_HOOK_DOMAIN": "hooks.example.test",
+            "TEST_APP_DOMAIN": "app.example.test",
+            "TEST_BOT_TOKEN": "test-token",
+            "TEST_BOT_USERNAME": "test_bot",
+            "TEST_ADMIN_IDS": "123456789",
+            "TEST_REMNAWAVE_API_URL": "https://panel.example.test",
+            "TEST_REMNAWAVE_API_KEY": "test-api-key",
+            "TEST_REMNAWAVE_SECRET_KEY": "test-secret-key",
+            "TEST_REMNAWAVE_WEBHOOK_SECRET": "test-webhook-secret",
+            "TEST_RELEASE_MANIFEST_SOURCE": manifest_source,
+        }
+
+        environment = RUNNER.remote_environment(config).decode("utf-8").splitlines()
+
+        self.assertIn(
+            f"TEST_RELEASE_MANIFEST_SOURCE={manifest_source}",
+            environment,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

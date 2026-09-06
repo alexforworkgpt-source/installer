@@ -41,6 +41,7 @@ TEST_KEYS = (
     "TEST_REMNAWAVE_SECRET_KEY",
     "TEST_REMNAWAVE_WEBHOOK_SECRET",
 )
+OPTIONAL_TEST_KEYS = ("TEST_RELEASE_MANIFEST_SOURCE",)
 
 
 class RemoteIntegrationError(RuntimeError):
@@ -210,6 +211,14 @@ def create_source_archive(workspace: Path, destination: Path) -> None:
 
 def remote_environment(config: dict[str, str]) -> bytes:
     lines = [f"{key}={shlex.quote(config[key])}" for key in TEST_KEYS]
+    for key in OPTIONAL_TEST_KEYS:
+        value = config.get(key, "").strip()
+        if value:
+            if "\n" in value or "\r" in value or "\0" in value:
+                raise RemoteIntegrationError(
+                    f"server.env contains unsafe control data in {key}"
+                )
+            lines.append(f"{key}={shlex.quote(value)}")
     return ("\n".join(lines) + "\n").encode("utf-8")
 
 
