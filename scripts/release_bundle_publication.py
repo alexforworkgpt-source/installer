@@ -29,14 +29,25 @@ def create_pinned_cabinet_dockerfile(
         raise ValueError("nginx runtime image must be pinned by sha256 digest")
 
     dockerfile = source_path.read_text(encoding="utf-8")
-    node_from = "FROM node:20-alpine AS builder"
+    supported_node_stages = (
+        "FROM node:20-alpine AS builder",
+        "FROM node:24-alpine AS builder",
+    )
     nginx_from = "FROM nginx:alpine"
-    if dockerfile.count(node_from) != 1 or dockerfile.count(nginx_from) != 1:
+    stages = list(re.finditer(r"(?im)^[ \t]*FROM\b[^\r\n]*", dockerfile))
+    if (
+        len(stages) != 2
+        or stages[0].group() not in supported_node_stages
+        or stages[1].group() != nginx_from
+    ):
         raise ValueError("Cabinet Dockerfile base image contract changed")
-    dockerfile = dockerfile.replace(
-        node_from,
-        f"FROM {node_builder_image} AS builder",
-    ).replace(nginx_from, f"FROM {nginx_runtime_image}")
+    # Replace only the validated FROM directives, never matching comment text.
+    pinned_stages = iter(
+        (f"FROM {node_builder_image} AS builder", f"FROM {nginx_runtime_image}")
+    )
+    dockerfile = re.sub(
+        r"(?im)^[ \t]*FROM\b[^\r\n]*", lambda _: next(pinned_stages), dockerfile
+    )
     output_path.write_text(dockerfile, encoding="utf-8")
 
 
