@@ -13,7 +13,7 @@ migration_manifest_value() {
 
 migration_service_is_running() {
   local service_name="$1"
-  compose_cmd ps --status running --services 2>/dev/null | grep -Fxq "${service_name}"
+  compose_cmd ps --status running --services 2>/dev/null | grep -Fx "${service_name}" >/dev/null
 }
 
 migration_service_container() {

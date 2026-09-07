@@ -24,6 +24,19 @@ if [[ "${1:-}" == export-child ]]; then
   source "${SCRIPT_DIR}/lib/migrate.sh"
   set_runtime_paths
 
+  if ! (
+    compose_cmd() {
+      printf '%s\n' postgres
+      for index in {1..20000}; do
+        printf 'other-service-%s\n' "${index}"
+      done
+    }
+    migration_service_is_running postgres
+  ); then
+    printf '%s\n' 'Migration export rejected a running service after an early pipe close.' >&2
+    exit 1
+  fi
+
   ensure_root() { :; }
   require_state_file() { :; }
   require_docker_compose() { :; }
