@@ -1,0 +1,88 @@
+name: Promote Release Bundle
+
+on:
+  workflow_dispatch:
+    inputs:
+      installer_tag:
+        description: Existing stable Installer source tag
+        required: true
+        type: string
+      installer_sha:
+        description: Exact tested Installer commit; also publication and promotion workflow commit
+        required: true
+        type: string
+      bundle_tag:
+        description: Existing published immutable bundle-vYYYY.MM.DD[.N] candidate
+        required: true
+        type: string
+      promotion_evidence_sha:
+        description: Exact reviewed promotion record commit reachable from default branch
+        required: true
+        type: string
+      promotion_evidence_path:
+        description: Public JSON record under releases/evidence/ in that commit
+        required: true
+        type: string
+      make_latest:
+        description: Explicitly recommend this stable Bundle as latest; must match reviewed record
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: publication-${{ inputs.bundle_tag }}
+  cancel-in-progress: false
+
+env:
+  INSTALLER_TAG: ${{ inputs.installer_tag }}
+  INSTALLER_SHA: ${{ inputs.installer_sha }}
+  BUNDLE_TAG: ${{ inputs.bundle_tag }}
+  WORKFLOW_SHA: ${{ github.workflow_sha }}
+  PROMOTION_EVIDENCE_SHA: ${{ inputs.promotion_evidence_sha }}
+  PROMOTION_EVIDENCE_PATH: ${{ inputs.promotion_evidence_path }}
+  MAKE_LATEST: ${{ inputs.make_latest }}
+  DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.installer_tag }}
+          fetch-depth: 0
+      - name: Fetch reviewed evidence branch
+        run: |
+          set -Eeuo pipefail
+          git check-ref-format "refs/heads/$DEFAULT_BRANCH"
+          git fetch --no-tags origin "refs/heads/$DEFAULT_BRANCH:refs/remotes/origin/$DEFAULT_BRANCH"
+      - name: Verify candidate, project Releases and durable proofs without writing GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/promote_release_bundle.py verify --output "$RUNNER_TEMP/bundle-verification"
+
+  promote:
+    needs: verify
+    runs-on: ubuntu-24.04
+    environment: production-release
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.installer_tag }}
+          fetch-depth: 0
+      - name: Fetch reviewed evidence branch again after approval
+        run: |
+          set -Eeuo pipefail
+          git check-ref-format "refs/heads/$DEFAULT_BRANCH"
+          git fetch --no-tags origin "refs/heads/$DEFAULT_BRANCH:refs/remotes/origin/$DEFAULT_BRANCH"
+      - name: Reverify public bytes and change only stable/latest metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/promote_release_bundle.py promote --output "$RUNNER_TEMP/bundle-promotion"

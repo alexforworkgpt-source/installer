@@ -6,18 +6,19 @@ import argparse
 import os
 from pathlib import Path, PurePosixPath
 import hashlib
+import json
 import re
 import shlex
 import shutil
 import subprocess
 import sys
-import tarfile
 import tempfile
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(WORKSPACE))
 
 from lib.env_helper import parse_env
+from lib.integration_source import IntegrationSourceError, create_source_archive as package_source
 
 
 SSH_KEYS = (
@@ -193,20 +194,13 @@ class RemoteSession:
         )
 
 
-def create_source_archive(workspace: Path, destination: Path) -> None:
-    excluded_roots = {".git", ".scratch", "state"}
-    with tarfile.open(destination, "w:gz") as archive:
-        for path in sorted(workspace.rglob("*")):
-            relative = path.relative_to(workspace)
-            if relative.parts[0] in excluded_roots:
-                continue
-            if path.name in {"server.env", "env.txt"} or "__pycache__" in relative.parts:
-                continue
-            if path.suffix == ".pyc":
-                continue
-            if path.is_symlink():
-                raise RemoteIntegrationError(f"refusing to upload symlink: {relative}")
-            archive.add(path, arcname=relative.as_posix(), recursive=False)
+def create_source_archive(
+    workspace: Path, destination: Path, *, expected_sha: str | None = None
+) -> dict[str, str]:
+    try:
+        return package_source(workspace, destination, expected_sha=expected_sha)
+    except IntegrationSourceError as error:
+        raise RemoteIntegrationError(str(error)) from error
 
 
 def remote_environment(config: dict[str, str]) -> bytes:
@@ -392,22 +386,33 @@ def main(argv: list[str]) -> int:
     )
     parser.add_argument("--env", default="server.env")
     parser.add_argument(
+        "--source-sha", help="exact committed Installer SHA to upload for the run action"
+    )
+    parser.add_argument(
         "--confirm-disposable-server",
         action="store_true",
         help="confirm that destructive integration is authorized for this server",
     )
     arguments = parser.parse_args(argv)
-
-    config = apply_disposable_confirmation(
-        parse_env((WORKSPACE / arguments.env).resolve()),
-        confirmed=arguments.confirm_disposable_server,
-    )
-    validate_config(config)
-    if not shutil.which("ssh") or not shutil.which("ssh-keyscan"):
-        raise RemoteIntegrationError("OpenSSH client tools are unavailable")
+    if arguments.action == "run" and not arguments.source_sha:
+        parser.error("run requires --source-sha with the exact Installer commit")
 
     with tempfile.TemporaryDirectory(prefix="bedolaga-remote-integration-") as temp:
         temp_dir = Path(temp)
+        archive = temp_dir / "installer.tar.gz"
+        if arguments.action == "run":
+            identity = create_source_archive(
+                WORKSPACE, archive, expected_sha=arguments.source_sha
+            )
+            print("Installer source: " + json.dumps(identity, sort_keys=True))
+
+        config = apply_disposable_confirmation(
+            parse_env((WORKSPACE / arguments.env).resolve()),
+            confirmed=arguments.confirm_disposable_server,
+        )
+        validate_config(config)
+        if not shutil.which("ssh") or not shutil.which("ssh-keyscan"):
+            raise RemoteIntegrationError("OpenSSH client tools are unavailable")
         session = RemoteSession(config, temp_dir)
         session.prepare_host_key()
         if arguments.action == "apt-status":
@@ -425,8 +430,6 @@ def main(argv: list[str]) -> int:
         else:
             run_preflight(session, config)
         if arguments.action == "run":
-            archive = temp_dir / "installer.tar.gz"
-            create_source_archive(WORKSPACE, archive)
             run_integration(session, config, archive)
     return 0
 

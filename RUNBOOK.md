@@ -240,20 +240,39 @@ v2 до runtime mutation. Поэтому существующую установ
 
 ## Публикация нового Release Bundle
 
-Публикация выполняется workflow `Publish Release Bundle` на GitHub Actions.
-Cabinet собирается на runner GitHub, а не на локальном компьютере и не на VPS.
-До начала убедитесь, что полный disposable Ubuntu 24.04 lifecycle gate прошёл
-для публикуемого installer commit.
+Ниже описаны локально подготовленные workflows `Publish Installer` и
+`Publish Release Bundle`. Они ещё не опубликованы в GitHub. В опубликованном
+Installer `b54219d` исходники и Bundle выбирались одним `installer_tag`;
+исторические Releases и их URL остаются неизменными.
+
+Новый Bundle workflow публикует только prerelease с `latest=false`. Собственный
+`Publish Custom Cabinet` и отдельный `Promote Release Bundle` подготовлены
+локально; их работа на GitHub ещё не проверена. Новый процесс пока не завершён
+для production-рекомендации. Cabinet собирается на runner GitHub.
+Production deployment остаётся отдельным разрешённым действием.
+
+Перед первым публичным запуском новые source и workflow должны пройти полный
+disposable Ubuntu 24.04 lifecycle, а будущие tags/Releases — получить защиту
+и native release immutability по ADR. Настройки GitHub локальная реализация
+не меняет. Формат и границы доверия proof описаны в
+[docs/lifecycle-evidence.md](docs/lifecycle-evidence.md).
 
 ### 1. Выбрать неизменяемые версии
 
-- создать и отправить новый installer tag, указывающий на проверенный commit;
+- выбрать существующий Installer source tag `installer-vYYYY.MM.DD[.N]` и
+  exact SHA; новый source tag нужен только при изменении кода Installer;
+- подготовить новый `bundle-v<release>` на том же Installer commit; оба tags
+  должны уже существовать на GitHub до запуска workflow;
 - выбрать точный 40-символьный Git SHA Bot;
 - выбрать публичный GitHub-репозиторий Cabinet и точный 40-символьный Git SHA;
 - разрешить PostgreSQL, Redis, Node builder и Nginx runtime только в identities
   вида `image@sha256:<64 hex>`;
-- выбрать release name, например `2026.08.N`, и соответствующий installer tag,
-  например `v2026.08.N`.
+- выбрать Bundle release name `YYYY.MM.DD[.N]`, например `2026.10.01.1`;
+- получить reviewed lifecycle JSON и redacted log в `releases/evidence/`
+  на доверенной default branch Installer, записать exact evidence commit/path.
+
+Эти действия выполняются только в рамках разрешённой публикации. Подготовка
+локальных workflows не создаёт tags, Releases или подтверждение реального PASS.
 
 Не используйте изменяемые `main`, `latest` или обычные Docker tags как
 зафиксированные production identities.
@@ -263,15 +282,17 @@ Cabinet собирается на runner GitHub, а не на локальном
 В GitHub откройте:
 
 ```text
-Actions -> Publish Release Bundle -> Run workflow
+Actions -> Publish Release Bundle -> Run workflow -> выбрать Installer source tag
 ```
 
 Заполните inputs:
 
 | Input | Что указать |
 |---|---|
-| `release` | Публичное имя версии без `v` |
-| `installer_tag` | Уже существующий неизменяемый tag installer |
+| `release` | Bundle version `YYYY.MM.DD[.N]` |
+| `installer_tag` | Существующий source tag `installer-vYYYY.MM.DD[.N]` |
+| `installer_sha` | Exact 40-символьный Installer commit |
+| `bundle_tag` | Существующий `bundle-v<release>` на том же commit |
 | `bot_ref` | Точный SHA Bot |
 | `cabinet_repository` | Default публичный Custom Cabinet; менять только осознанно |
 | `cabinet_ref` | Точный SHA Cabinet |
@@ -279,42 +300,128 @@ Actions -> Publish Release Bundle -> Run workflow
 | `redis_image` | Redis image с `@sha256` |
 | `node_builder_image` | Node builder image с `@sha256` |
 | `nginx_runtime_image` | Nginx runtime image с `@sha256` |
-| `lifecycle_proof` | Только точное значение `ubuntu-24.04-passed` после реального gate |
-| `lifecycle_sha` | Точный 40-символьный Installer SHA, на котором прошёл gate |
+| `lifecycle_evidence_sha` | Exact reviewed commit с proof на default branch |
+| `lifecycle_evidence_path` | JSON в `releases/evidence/` на этом commit |
+
+`Use workflow from` должен указывать на exact выбранный Installer commit:
+runner проверяет `github.workflow_sha`, checkout, dereferenced source/Bundle tags
+и ожидаемый SHA. Изменённый publication workflow требует нового Installer
+commit и нового lifecycle proof. Строковые inputs `lifecycle_proof` и
+`lifecycle_sha` старого workflow больше не служат proof нового процесса.
+
+`Publish Installer` принимает четыре inputs: `installer_tag`, `installer_sha`
+и два `lifecycle_evidence_*`. Он публикует только Installer archive/checksum,
+не содержит Cabinet или `release.json` и всегда сохраняет текущий `latest` Bundle.
 
 ### 3. Дождаться полной проверки
 
 Workflow должен успешно выполнить все этапы:
 
-1. проверить installer tag и lifecycle attestation;
-2. запустить release-contract tests;
-3. разрешить Bot и Cabinet refs в точные SHA;
-4. дважды собрать Cabinet и сравнить результаты byte-for-byte;
-5. создать и проверить manifest;
-6. создать draft Release и загрузить assets;
-7. скачать draft-assets обратно, сравнить manifest/provenance и проверить checksums;
-8. только после этого сделать Release публичным.
+1. сверить source/workflow/tag identities и создать безопасный committed archive;
+2. подтвердить отсутствие любого existing Release именно для `bundle_tag`;
+3. запустить прежний полный набор release-contract tests;
+4. загрузить PostgreSQL/Redis по exact digest под `linux/amd64` и проверить identity;
+5. разрешить Bot/Cabinet refs, дважды собрать Cabinet и сравнить bytes;
+6. создать schema v2 manifest с Cabinet URL под `bundle_tag`;
+7. сверить reviewed lifecycle source/tree/archive hash и protected stack;
+8. создать свой draft Bundle, загрузить шесть assets без замены existing assets;
+9. скачать assets обратно, сверить exact набор/bytes всех шести файлов с runner
+   и проверить manifest/provenance/checksums;
+10. опубликовать только prerelease candidate, без изменения `latest`.
 
-Draft не считается готовым результатом. При падении workflow найдите первый
-failed step и устраните причину; не ослабляйте SHA, digest или checksum проверки.
+Draft и prerelease не являются стабильным production Bundle. Existing draft
+не удаляется для повторной попытки: используйте новый tag либо отдельно разбирайте
+свой незавершённый запуск. Cleanup проверяет receipt текущего run, Release ID,
+tag, owner marker и draft status; public Release сохраняется. API error, включая
+403/404, останавливает lookup, а не означает отсутствие Release.
 
 ### 4. Независимо проверить публичный Release
 
 После публикации скачайте assets по публичным URL без GitHub-токена и проверьте:
 
-- Release не является draft или prerelease;
+- candidate является prerelease и не сменил `latest`;
 - опубликованы `cabinet-dist.tar.gz`, два `.sha256`, архив installer,
   `release.json` и `release-provenance.json`;
-- обе команды `sha256sum --check` завершаются успешно;
+- все шесть файлов совпадают с подготовленными bytes, обе команды
+  `sha256sum --check` завершаются успешно;
 - `release.json` содержит ожидаемые Bot/Cabinet repository, SHA и PostgreSQL/Redis digests;
 - checksum Cabinet в manifest совпадает с реально скачанным файлом;
 - provenance содержит ожидаемые Cabinet repository/SHA, Node builder и Nginx identities;
-- архив installer соответствует точному опубликованному tag;
+- Installer archive соответствует выбранному source SHA/tag, а Bundle tag
+  указывает на тот же Installer commit;
 - в installer archive отсутствуют private и generated artifacts, включая
-  `server.env`, `env.txt`, `.playwright-mcp`, `__pycache__` и `*.pyc`.
+  `server.env`, `server.prod.env`, `env.txt`, `.playwright-mcp`, `__pycache__` и `*.pyc`.
 
-Только после этой независимой проверки Release можно предлагать VPS как новый
-production Bundle.
+Публичный candidate можно использовать для разрешённых тестов по его точному
+URL. Для production-рекомендации ещё требуются собственные stable Releases
+Installer/Custom Cabinet и separate promotion gate, привязанный к этим же
+asset bytes и долговременному evidence. Подготовлен workflow `Promote Release Bundle`
+и формат [bundle-promotion-evidence.md](docs/bundle-promotion-evidence.md). Этапы описаны в плане;
+ручно менять candidate assets или обходить promotion proof нельзя.
+
+### 5. Проверка project Releases перед stable promotion
+
+В Custom Cabinet подготовлен отдельный `Publish Custom Cabinet`; порядок
+описан в его `RELEASE_PROCESS.md`. Он фиксирует source version и limits,
+а compiled Cabinet остаётся в Release Bundle Installer.
+
+В Installer подготовлена read-only команда; тот же guard использует promotion workflow:
+
+```bash
+python3 scripts/publication_control.py project-releases \
+  --manifest /path/to/verified-public-candidate/release.json \
+  --cabinet-tag cabinet-vYYYY.MM.DD
+```
+
+Она принимает `GITHUB_REPOSITORY`, `INSTALLER_TAG`, `INSTALLER_SHA`, `GH_TOKEN`
+из окружения; значения токена не выводить. Проверяет stable Installer Release
+и Cabinet Release в source repository из manifest. Каждый tag должен
+dereference в exact selected source SHA, а draft/prerelease/missing/API error
+останавливают gate. Cabinet сравнивается с `cabinet.source_sha` данного
+public candidate; Installer — с проверенным source/evidence выбранного выпуска.
+
+Исторический stable Cabinet Release без нового metadata JSON пригоден для
+reuse. Изменение Bot требует нового compatibility evidence Bundle, без правки
+старого Cabinet Release. Команда проверяет project identities, не smoke или
+совместимость. Отдельный `Promote Release Bundle` использует тот же guard
+после проверки public candidate bytes и долговременного reviewed evidence.
+
+### 6. Перевести exact public candidate в stable
+
+Следуйте [bundle-promotion-evidence.md](docs/bundle-promotion-evidence.md).
+Сначала подтвердите применимые lifecycle/transition/smoke gates, затем примите
+публичный record и очищенный журнал на default branch по reviewed процессу.
+GitHub должен возвращать `immutable=true` у candidate. Этот процесс требует
+нового trusted proof для первого изменённого Installer commit; прежний proof
+`b54219d…` не подтверждает код нового publication/promotion процесса.
+
+В `Promote Release Bundle` передайте source Installer tag/SHA, конечный Bundle
+tag, exact promotion evidence commit/path и явно выбранный `make_latest`.
+Workflow выполняется из выбранного Installer commit. Preflight использует
+read-only GitHub permissions; после environment gate отдельный job повторно
+скачивает public assets без токена и сверяет всё перед metadata PATCH по ID.
+Запись должна согласовать тот же latest выбор; default false не вытесняет
+действующий latest. Настоящие environment approval rules ещё надо проверить.
+
+Для отдельной read-only проверки entry point:
+
+```bash
+python3 scripts/promote_release_bundle.py verify \
+  --output "$RUNNER_TEMP/new-bundle-verification"
+```
+
+Нужны `INSTALLER_TAG`, `INSTALLER_SHA`, `BUNDLE_TAG`, `WORKFLOW_SHA`,
+`PROMOTION_EVIDENCE_SHA`, `PROMOTION_EVIDENCE_PATH`, `DEFAULT_BRANCH`,
+`GITHUB_REPOSITORY`, `MAKE_LATEST`, `GH_TOKEN`. Токен нужен только для API
+metadata/run lookup; public downloads не получают Authorization. Output —
+новая папка внутри RUNNER_TEMP и вне source, без перезаписи existing files.
+Команда `promote` после тех же checks меняет только prerelease/latest;
+ручной запуск разрешён лишь в рамках отдельно разрешённой публикации.
+
+Результат уже stable Release — no-op с повторной проверкой, без повторной смены
+latest. При API failure или несовпадении proof/bytes/run/source ничего
+не исправляется внутри Release. Failed candidate сохраняется, изменённые
+assets требуют нового tag. Promotion не выполняет production update.
 
 ## Сервисы
 
@@ -386,16 +493,45 @@ production Bundle.
 
 ## Release lifecycle gate
 
-Перед публикацией installer Release на disposable Ubuntu 24.04 запускается:
+Локальные contract tests запускаются отдельно от полного lifecycle:
 
 ```bash
-python3 tests/integration/run-remote.py run --confirm-disposable-server
+PYTHONDONTWRITEBYTECODE=1 bash scripts/run-release-contract-tests.sh
+```
+
+Этот набор выполняется только в disposable Linux окружении: recovery harness
+создаёт и удаляет тестовые пути в `/opt` и `/etc/caddy`. Он использует подменённые
+сервисы и не доказывает настоящий Docker runtime, GitHub publication или
+Telegram/payment integrations. Локальный dirty source допустим для этих tests,
+но их PASS не является proof для source commit.
+
+Перед первой публикацией нового Installer Release на отдельно разрешённом
+disposable Ubuntu 24.04 запускается полный lifecycle:
+
+```bash
+INSTALLER_SOURCE_SHA="$(git rev-parse HEAD)"
+python3 tests/integration/run-remote.py run \
+  --source-sha "${INSTALLER_SOURCE_SHA}" --confirm-disposable-server
 python3 tests/integration/run-remote.py final-postflight --confirm-disposable-server
 ```
+
+Команды выполняются из clean Git candidate Installer, а не из распакованного
+Release archive или установленной management-копии. Runner до чтения
+connection environment и SSH сверяет expected SHA с HEAD и отклоняет
+uncommitted tracked/untracked source. Ignored private и временные файлы не
+входят в source snapshot; даже tracked environment/state/generated paths
+исключаются. Источник — Git commit, не содержимое локальной папки.
+
+Сохраните строку `Installer source` с `installer_sha`, `installer_tree_sha`
+и `archive_sha256` вместе с результатом gate. Tree SHA относится к Git tree,
+archive checksum — к фактически отправляемому public snapshot с исключениями.
+Этот вывод подтверждает identity source, но сам по себе не означает lifecycle
+PASS. `installer_sha` в lifecycle record берётся из реально проверенного commit,
+а не из другого HEAD.
 
 Gate проверяет clean preflight, minimal fresh/repeat install, legacy fixture,
 settings draft/apply, protected update, injected verified rollback, file recovery,
 non-root writes, второй Compose project и uninstall. Publication workflow требует
-inputs `lifecycle_proof=ubuntu-24.04-passed` и точный `lifecycle_sha`; без реально
-завершённого gate для этого commit их указывать нельзя. Диагностические файлы
+reviewed lifecycle record с exact source/stack identities; без реально
+завершённого gate для этого commit такой record принимать нельзя. Диагностические файлы
 остаются private и не должны содержать credentials.

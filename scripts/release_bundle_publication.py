@@ -14,6 +14,7 @@ if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 
 from lib.release_bundle import load_release_bundle
+from lib.publication_identity import validate_tag_roles
 
 
 def create_pinned_cabinet_dockerfile(
@@ -107,6 +108,7 @@ def create_release_manifest(
     postgres_image: str,
     redis_image: str,
     migration_policy: str,
+    bundle_tag: str | None = None,
 ) -> None:
     if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", installer_repository):
         raise ValueError("installer repository must use OWNER/REPOSITORY format")
@@ -114,10 +116,15 @@ def create_release_manifest(
         raise ValueError("installer tag contains unsupported characters")
     if not release:
         raise ValueError("release must not be empty")
+    if bundle_tag is not None:
+        validate_tag_roles(installer_tag, bundle_tag, release)
+    publication_tag = bundle_tag if bundle_tag is not None else installer_tag
+    if not re.fullmatch(r"[A-Za-z0-9._-]+", publication_tag):
+        raise ValueError("bundle tag contains unsupported characters")
 
     artifact_url = (
         f"https://github.com/{installer_repository}/releases/download/"
-        f"{installer_tag}/cabinet-dist.tar.gz"
+        f"{publication_tag}/cabinet-dist.tar.gz"
     )
     manifest = {
         "schema_version": 2,
@@ -150,6 +157,24 @@ def create_release_manifest(
     load_release_bundle(output_path, supported_configuration_schema=1)
 
 
+def verify_downloaded_assets(expected: Path, downloaded: Path, release: str) -> None:
+    if not re.fullmatch(r"[A-Za-z0-9._-]+", release):
+        raise ValueError("release contains unsupported characters")
+    names = {
+        "cabinet-dist.tar.gz", "cabinet-dist.tar.gz.sha256", "release.json",
+        "release-provenance.json", f"installer-{release}.tar.gz",
+        f"installer-{release}.tar.gz.sha256",
+    }
+    for directory in (expected, downloaded):
+        if {path.name for path in directory.iterdir()} != names:
+            raise ValueError("Bundle assets are incomplete or contain unexpected entries")
+        if any((directory / name).is_symlink() or not (directory / name).is_file() for name in names):
+            raise ValueError("Bundle assets must be regular files")
+    for name in names:
+        if (expected / name).read_bytes() != (downloaded / name).read_bytes():
+            raise ValueError(f"downloaded Bundle asset differs from prepared bytes: {name}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build installer Release Bundle assets")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -158,11 +183,17 @@ def main() -> int:
     archive_parser.add_argument("source_dir", type=Path)
     archive_parser.add_argument("output_path", type=Path)
 
+    download_parser = subparsers.add_parser("verify-download")
+    download_parser.add_argument("--expected", required=True, type=Path)
+    download_parser.add_argument("--downloaded", required=True, type=Path)
+    download_parser.add_argument("--release", required=True)
+
     manifest_parser = subparsers.add_parser("create-manifest")
     manifest_parser.add_argument("--output", required=True, type=Path)
     manifest_parser.add_argument("--release", required=True)
     manifest_parser.add_argument("--installer-repository", required=True)
     manifest_parser.add_argument("--installer-tag", required=True)
+    manifest_parser.add_argument("--bundle-tag")
     manifest_parser.add_argument("--bot-repository", required=True)
     manifest_parser.add_argument("--bot-sha", required=True)
     manifest_parser.add_argument("--cabinet-repository", required=True)
@@ -183,6 +214,9 @@ def main() -> int:
     dockerfile_parser.add_argument("nginx_runtime_image")
 
     args = parser.parse_args()
+    if args.command == "verify-download":
+        verify_downloaded_assets(args.expected, args.downloaded, args.release)
+        return 0
     if args.command == "package-cabinet":
         print(create_deterministic_cabinet_archive(args.source_dir, args.output_path))
         return 0
@@ -200,6 +234,7 @@ def main() -> int:
         release=args.release,
         installer_repository=args.installer_repository,
         installer_tag=args.installer_tag,
+        bundle_tag=args.bundle_tag,
         bot_repository=args.bot_repository,
         bot_sha=args.bot_sha,
         cabinet_repository=args.cabinet_repository,

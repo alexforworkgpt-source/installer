@@ -8,9 +8,9 @@ Cabinet и Docker-образы. Строгий формат `release.json` и п
 
 | Компонент | Где находятся исходники | Откуда компонент попадает на VPS |
 |---|---|---|
-| Installer | Репозиторий `installer` | Архив из публичного Release `installer` |
+| Installer | Репозиторий `installer` | Архив выбранного Installer Release или Release Bundle |
 | Upstream Bot | Upstream-репозиторий Bot | VPS скачивает точный Git SHA и собирает Bot |
-| Cabinet frontend | Upstream Cabinet или публичный Custom Cabinet | VPS скачивает готовый `cabinet-dist.tar.gz` из Release `installer` |
+| Cabinet frontend | Upstream Cabinet или публичный Custom Cabinet | VPS скачивает готовый `cabinet-dist.tar.gz` из выбранного Release Bundle |
 | PostgreSQL и Redis | Реестры Docker-образов | VPS скачивает образы по неизменяемым `@sha256` digest |
 
 Изменение в `main` upstream-репозитория само по себе не обновляет работающий
@@ -21,6 +21,12 @@ Cabinet и Docker-образы. Строгий формат `release.json` и п
 
 - **Release Bundle** — согласованный комплект одной версии Installer, Bot,
   Cabinet и Docker-образов.
+- **Installer Release** — отдельный выпуск инструмента установки с его
+  archive/checksum, без готового Cabinet и `release.json`.
+- **Custom Cabinet Release** — отдельная версия исходников frontend с описанием
+  совместимости и ограничений. Готовый frontend доставляет Release Bundle.
+- **Candidate → stable** — сначала публикуется проверяемый prerelease,
+  затем после обязательных проверок меняется только статус того же выпуска.
 - **Manifest `release.json`** — небольшой файл-список, в котором записано, какие
   именно версии и файлы разрешено установить.
 - **Git SHA** — уникальный номер конкретного состояния исходников. В отличие от
@@ -51,13 +57,20 @@ Cabinet установщик пересчитывает её для скачан
 flowchart LR
     B["Репозиторий Upstream Bot"] -->|"Точный Git SHA"| V["VPS: сборка и запуск Bot"]
     C["Upstream Cabinet или Custom Cabinet"] -->|"Точный Git SHA"| A["GitHub Actions репозитория installer"]
-    I["Репозиторий installer"] -->|"Неизменяемый tag"| A
+    I["Репозиторий Installer"] -->|"Installer source tag/SHA"| A
     A -->|"Собирает"| D["cabinet-dist.tar.gz"]
     A -->|"Создаёт"| M["release.json, provenance и checksums"]
-    D --> R["Публичный Release installer"]
+    D --> R["Release Bundle: public candidate"]
     M --> R
-    R -->|"Проверенный Bundle"| V
+    R -->|"Public downloads, evidence и smoke"| P["Stable promotion того же Bundle"]
+    P -->|"Отдельно разрешённый переход"| V
 ```
+
+Это схема подготовленного нового процесса; настоящий запуск workflows на
+GitHub ещё не проверен. Новые tags разделены: `installer-v` для Installer,
+`cabinet-v` для Custom Cabinet, `bundle-v` для Bundle. Bundle tag указывает
+на выбранный Installer commit. Старые `v2026.*` tags и URLs сохраняются.
+Standalone Installer и Cabinet Releases не вытесняют `latest` Bundle.
 
 GitHub Actions работает на сервере GitHub, а не на компьютере владельца.
 Компьютер нужен только для подготовки изменений, отправки tag и запуска
@@ -81,8 +94,11 @@ workflow. После публикации VPS скачивает необход�
 конкретном `release.json`.
 
 1. Maintainer выбирает точные SHA новых Bot и Cabinet.
-2. GitHub Actions создаёт новый Release Bundle и собирает Cabinet.
-3. Installer на VPS скачивает новый manifest и Cabinet artifact.
+2. GitHub Actions собирает Cabinet и публикует candidate Release Bundle;
+   после public checks, применимых lifecycle/transition/smoke gates и stable
+   project Releases он переводится в stable без замены assets.
+3. После отдельного разрешения владельца Installer на VPS скачивает выбранный
+   стабильный manifest и Cabinet artifact.
 4. До изменения runtime проверяются manifest, repositories, SHA, digests и checksum.
 5. Installer делает защищённый PostgreSQL dump и сохраняет прежнее состояние.
 6. Bot и Cabinet обновляются как одна совместимая группа.
@@ -112,8 +128,10 @@ Default source для новых сборок уже настроен на пу�
 2. Храните branding и изменения в Custom Cabinet, а не в готовых файлах на VPS.
 3. При публикации Bundle оставьте default `cabinet_repository` и укажите точный
    Custom Cabinet commit в `cabinet_ref`.
-4. GitHub Actions соберёт артефакт из вашего fork.
-5. VPS установит вашу сборку из Release `installer`.
+4. GitHub Actions соберёт артефакт из вашего fork и опубликует candidate Bundle.
+   Собственный Custom Cabinet Release фиксирует тот же source SHA; он должен
+   стать stable до stable promotion Bundle.
+5. После gates и отдельного разрешения VPS установит вашу сборку из stable Bundle.
 6. Для следующего обновления перенесите нужные upstream-изменения в Custom Cabinet и
    выпустите новый Bundle.
 
@@ -121,13 +139,16 @@ Default source для новых сборок уже настроен на пу�
 кастомизацией: следующее production-обновление заменит этот каталог проверенным
 артефактом. Custom Cabinet публичен, поэтому workflow клонирует его без токена.
 
-## Что находится в Release installer
+## Что находится в Releases репозитория Installer
 
-Workflow публикует шесть собственных assets:
+В репозитории Installer различаются собственный Installer Release и Release
+Bundle. Standalone workflow публикует `<installer_tag>.tar.gz` и его `.sha256`.
+Bundle workflow публикует шесть собственных assets:
 
 - `cabinet-dist.tar.gz` — готовый Cabinet;
 - `cabinet-dist.tar.gz.sha256` — его checksum;
-- `installer-<release>.tar.gz` — архив точного tag installer;
+- `installer-<release>.tar.gz` — копия выбранного Installer source в комплекте,
+  имя содержит версию Bundle;
 - `installer-<release>.tar.gz.sha256` — checksum installer;
 - `release.json` — manifest для установки и обновления;
 - `release-provenance.json` — точные Cabinet SHA и identities образов,
@@ -136,6 +157,14 @@ Workflow публикует шесть собственных assets:
 Исходники Bot и Cabinet в assets не копируются. GitHub дополнительно показывает
 стандартные ссылки `Source code (zip)` и `Source code (tar.gz)` — это
 автоматические архивы только репозитория `installer` для выбранного tag.
+
+Для нового Installer commit нужен новый полный lifecycle на disposable
+Ubuntu 24.04. При Cabinet-only изменении прежний proof можно использовать
+повторно, если exact Installer source, Bot, runtime images, contracts и target
+OS не изменились; Cabinet gates и targeted smoke нового Bundle обязательны.
+Same-version update не доказывает переход между версиями Bot или схемами БД.
+Формат proof и условия reuse:
+[lifecycle-evidence.md](lifecycle-evidence.md).
 
 ## Кто за что отвечает
 

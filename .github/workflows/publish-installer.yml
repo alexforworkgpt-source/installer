@@ -1,0 +1,120 @@
+name: Publish Installer
+
+on:
+  workflow_dispatch:
+    inputs:
+      installer_tag:
+        description: Existing source tag, for example installer-v2026.10.01
+        required: true
+        type: string
+      installer_sha:
+        description: Exact Installer commit (40 lowercase hex)
+        required: true
+        type: string
+      lifecycle_evidence_sha:
+        description: Exact reviewed lifecycle evidence commit on the default branch
+        required: true
+        type: string
+      lifecycle_evidence_path:
+        description: Public lifecycle JSON under releases/evidence/ in that commit
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publication-${{ inputs.installer_tag }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    environment: production-release
+    env:
+      INSTALLER_TAG: ${{ inputs.installer_tag }}
+      INSTALLER_SHA: ${{ inputs.installer_sha }}
+      WORKFLOW_SHA: ${{ github.workflow_sha }}
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      LIFECYCLE_EVIDENCE_SHA: ${{ inputs.lifecycle_evidence_sha }}
+      LIFECYCLE_EVIDENCE_PATH: ${{ inputs.lifecycle_evidence_path }}
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Checkout exact Installer source tag
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.installer_tag }}
+
+      - name: Verify source and preserve existing Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/publication_control.py source \
+            --source "${RUNNER_TEMP}/installer-source.json" \
+            --archive "${RUNNER_TEMP}/installer-source.tar.gz"
+          python3 scripts/publication_control.py check-release
+
+      - name: Run release contract tests
+        shell: bash
+        run: bash scripts/run-release-contract-tests.sh
+
+      - name: Verify reviewed lifecycle evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git fetch --no-tags origin "refs/heads/${DEFAULT_BRANCH}:refs/remotes/origin/${DEFAULT_BRANCH}"
+          python3 scripts/publication_control.py evidence --source "${RUNNER_TEMP}/installer-source.json"
+
+      - name: Prepare standalone Installer assets
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p release-assets
+          cp "${RUNNER_TEMP}/installer-source.tar.gz" "release-assets/${INSTALLER_TAG}.tar.gz"
+          (cd release-assets && sha256sum "${INSTALLER_TAG}.tar.gz" > "${INSTALLER_TAG}.tar.gz.sha256")
+          printf 'Installer source %s (%s). Lifecycle evidence: %s at %s. Cabinet artifacts are distributed in Release Bundle.\n' \
+            "${INSTALLER_TAG}" "${INSTALLER_SHA}" "${LIFECYCLE_EVIDENCE_PATH}" \
+            "${LIFECYCLE_EVIDENCE_SHA}" > "${RUNNER_TEMP}/release-notes.txt"
+
+      - name: Create owned draft and upload Installer assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/publication_control.py create-draft \
+            --receipt "${RUNNER_TEMP}/publication-receipt.json" --notes "${RUNNER_TEMP}/release-notes.txt"
+          gh release upload "${INSTALLER_TAG}" release-assets/*
+
+      - name: Re-download and verify exact Installer assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gh release download "${INSTALLER_TAG}" --dir downloaded-assets
+          cmp "release-assets/${INSTALLER_TAG}.tar.gz" "downloaded-assets/${INSTALLER_TAG}.tar.gz"
+          cmp "release-assets/${INSTALLER_TAG}.tar.gz.sha256" "downloaded-assets/${INSTALLER_TAG}.tar.gz.sha256"
+          (cd downloaded-assets && sha256sum --check "${INSTALLER_TAG}.tar.gz.sha256")
+
+      - name: Publish Installer without changing latest Bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/publication_control.py publish-draft --stable \
+            --receipt "${RUNNER_TEMP}/publication-receipt.json"
+
+      - name: Remove only this failed workflow draft
+        if: ${{ failure() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/publication_control.py cleanup-draft \
+            --receipt "${RUNNER_TEMP}/publication-receipt.json"

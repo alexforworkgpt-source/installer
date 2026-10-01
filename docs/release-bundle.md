@@ -5,8 +5,9 @@
 [«Как устроены установка и обновление»](release-and-update-flow.md).
 
 Release Bundle фиксирует совместимый production-набор Bot, Cabinet и runtime
-images. Manifest публикуется release pipeline installer вместе с release installer и проходит проверку до
-изменения работающего стека.
+images и выбранной версии Installer. Manifest публикуется как asset Release
+Bundle в репозитории Installer и проходит проверку до изменения работающего
+стека. Собственный Installer Release содержит только его archive/checksum.
 
 ## Состав manifest
 
@@ -34,7 +35,7 @@ Release pipeline installer собирает frontend из точного Cabinet
 располагаются рядом с ним. Symlinks, hardlinks, devices, абсолютные пути и пути
 с `..` запрещены.
 
-Artifact, manifest и SHA-256 публикуются как assets одного GitHub Release installer. Значение checksum
+Artifact, manifest и SHA-256 публикуются как assets одного Release Bundle. Значение checksum
 дублируется в Release Bundle manifest. Installer проверяет checksum до
 распаковки и активирует frontend атомарной заменой каталога.
 
@@ -45,16 +46,33 @@ Artifact собирается tenant-neutral: `VITE_API_URL=/api`, Telegram widg
 Publication pipeline находится в
 `.github/workflows/publish-release-bundle.yml`. Он разрешает refs в SHA, собирает
 Cabinet, создаёт deterministic archive и manifest через production parser,
-публикует draft release, скачивает assets обратно, сравнивает manifest и provenance,
-проверяет их структуру и checksums и только после этого публикует release. Реальный опубликованный Bundle и VPS smoke должны
-быть зафиксированы отдельно; наличие workflow само по себе не является таким proof.
+создаёт собственный draft, скачивает все шесть assets обратно и сравнивает
+их bytes с подготовленными файлами, проверяет структуру и checksums. После
+проверок публикуется только prerelease candidate с `latest=false`.
+Реальный опубликованный Bundle и VPS smoke фиксируются отдельно;
+наличие workflow само по себе не является таким proof.
 Node builder и Nginx runtime для сборки artifact задаются только immutable image
 digests; pipeline выполняет две сборки и сравнивает архивы byte-for-byte, а точные
 builder identities сохраняет в `release-provenance.json`.
-До публикации workflow требует явную аттестацию
-`lifecycle_proof=ubuntu-24.04-passed` и точный `lifecycle_sha`, совпадающий с
-публикуемым commit. Их разрешено задавать только после полного disposable Ubuntu
-lifecycle gate из `RUNBOOK.md`.
+В подготовленном новом процессе `installer_tag`/`installer_sha` выбирают
+exact Installer source, а `bundle_tag` на том же commit задаёт publication
+identity и конечные asset URLs. Версия Bundle `release` не является версией
+Installer. Исторические tags, URL, schema v1/v2 и алгоритм runtime identity
+сохраняются; publication evidence не добавляет поля в runtime contract.
+
+До публикации workflow требует `lifecycle_evidence_sha` и
+`lifecycle_evidence_path`: reviewed record и checksum-bound redacted log на
+default branch. Они связывают фактически проверенные Installer SHA/tree/archive
+с Bot/images/contracts/Ubuntu 24.04. Строки прежнего workflow
+`lifecycle_proof`/`lifecycle_sha` не заменяют это подтверждение.
+Формат и reuse rules: [lifecycle-evidence.md](lifecycle-evidence.md).
+
+После public downloads и применимых lifecycle/transition/smoke gates отдельный
+`Promote Release Bundle` проверяет durable evidence, stable project Releases
+Installer/Custom Cabinet на exact SHA и native `immutable=true`. Он меняет
+только prerelease/latest metadata, сохраняя tag и assets. Формат:
+[bundle-promotion-evidence.md](bundle-promotion-evidence.md).
+Эти workflows подготовлены локально; настоящий GitHub процесс ещё не проверен.
 
 ## Совместимость
 
