@@ -14,13 +14,25 @@ class GitHubReleasePublicationTests(unittest.TestCase):
         owned = {"id": 12, "tag_name": receipt["tag"], "draft": True, "body": receipt["marker"]}
         foreign = dict(owned, id=13, body="another publication")
         for visible in ([], [foreign], [owned, foreign]):
-            responses = [io.BytesIO(json.dumps(owned).encode()), io.BytesIO(json.dumps(visible).encode())]
-            with mock.patch("urllib.request.urlopen", side_effect=responses) as network:
+            def response(request, **kwargs):
+                return io.BytesIO(json.dumps(owned if request.full_url.endswith('/12') else visible).encode())
+            with mock.patch("urllib.request.urlopen", side_effect=response) as network, mock.patch("time.sleep"):
                 with self.assertRaisesRegex(ValueError, "unique visible owned draft"):
                     GitHubReleases(receipt["repository"], "fictional-token").publish(
                         receipt, "123/1", prerelease=True,
                     )
                 self.assertTrue(all(call.args[0].get_method() == "GET" for call in network.call_args_list))
+
+    def test_publication_waits_for_own_draft_visibility_without_creating_another_draft(self):
+        from lib.github_release_publication import GitHubReleases
+
+        receipt = {"repository": "OWNER/installer", "tag": "bundle-v2026.10.01",
+                   "id": 12, "marker": "<!-- publication-run: 123/1 -->"}
+        owned = {"id": 12, "tag_name": receipt["tag"], "draft": True, "body": receipt["marker"]}
+        responses = [owned, [], owned, [owned], {}]
+        with mock.patch("urllib.request.urlopen", side_effect=[io.BytesIO(json.dumps(r).encode()) for r in responses]) as network, mock.patch("time.sleep"):
+            GitHubReleases(receipt["repository"], "fictional-token").publish(receipt, "123/1", prerelease=True)
+            self.assertEqual([call.args[0].get_method() for call in network.call_args_list], ["GET", "GET", "GET", "GET", "PATCH"])
 
     def test_promotion_refuses_mutable_draft_or_replaced_asset_without_a_patch(self):
         from lib.github_release_publication import GitHubReleases

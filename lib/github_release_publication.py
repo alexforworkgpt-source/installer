@@ -2,6 +2,7 @@
 
 import json
 import re
+import time
 from urllib.error import HTTPError, URLError
 import urllib.request
 
@@ -59,13 +60,16 @@ class GitHubReleases:
         return matches[0] if matches else None
 
     def unique_owned_draft(self, receipt: dict, run: str) -> dict:
-        release = self.owned_draft(receipt, run)
-        if release is None:
-            raise ValueError("only the owned draft may be published")
-        matches = self.matching_releases(receipt["tag"])
-        if len(matches) != 1 or matches[0].get("id") != receipt["id"]:
-            raise ValueError("publication requires a unique visible owned draft; preserve other Releases")
-        return release
+        for attempt in range(6):
+            release = self.owned_draft(receipt, run)
+            if release is None:
+                raise ValueError("only the owned draft may be published")
+            matches = self.matching_releases(receipt["tag"])
+            if len(matches) == 1 and matches[0].get("id") == receipt["id"]:
+                return release
+            if matches or attempt == 5:
+                raise ValueError("publication requires a unique visible owned draft; preserve other Releases")
+            time.sleep(1)
 
     def workflow_run(self, run_id: int, attempt: int) -> dict:
         if any(type(value) is not int or value <= 0 for value in (run_id, attempt)):
