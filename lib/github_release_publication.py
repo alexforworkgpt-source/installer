@@ -38,22 +38,34 @@ class GitHubReleases:
         except (URLError, OSError, json.JSONDecodeError) as error:
             raise ValueError("GitHub release API response is unavailable or invalid") from error
 
-    def find(self, tag: str) -> dict | None:
-        # List includes drafts for the authenticated publisher. Only a successful
-        # complete lookup proves absence; a repository/API 404 never does.
+    def matching_releases(self, tag: str) -> list[dict]:
+        # GitHub's list can briefly omit a just-created draft. Absence is only
+        # a preflight hint, never permission to address uploaded assets by tag.
         page = 1
+        matches = []
         while True:
             releases = self.request(f"?per_page=100&page={page}")
             if (not isinstance(releases, list)
                     or any(not isinstance(item, dict) or not isinstance(item.get("tag_name"), str)
                            for item in releases)):
                 raise ValueError("GitHub release list is invalid")
-            for release in releases:
-                if release.get("tag_name") == tag:
-                    return release
+            matches.extend(release for release in releases if release.get("tag_name") == tag)
             if len(releases) < 100:
-                return None
+                return matches
             page += 1
+
+    def find(self, tag: str) -> dict | None:
+        matches = self.matching_releases(tag)
+        return matches[0] if matches else None
+
+    def unique_owned_draft(self, receipt: dict, run: str) -> dict:
+        release = self.owned_draft(receipt, run)
+        if release is None:
+            raise ValueError("only the owned draft may be published")
+        matches = self.matching_releases(receipt["tag"])
+        if len(matches) != 1 or matches[0].get("id") != receipt["id"]:
+            raise ValueError("publication requires a unique visible owned draft; preserve other Releases")
+        return release
 
     def workflow_run(self, run_id: int, attempt: int) -> dict:
         if any(type(value) is not int or value <= 0 for value in (run_id, attempt)):
@@ -101,8 +113,7 @@ class GitHubReleases:
         return True
 
     def publish(self, receipt: dict, run: str, *, prerelease: bool) -> None:
-        if self.owned_draft(receipt, run) is None:
-            raise ValueError("only the owned draft may be published")
+        self.unique_owned_draft(receipt, run)
         self.request(f"/{receipt['id']}", method="PATCH", data={
             "draft": False, "prerelease": prerelease, "make_latest": "false",
         })

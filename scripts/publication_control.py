@@ -11,6 +11,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from lib.github_release_publication import GitHubReleases
+from lib.github_release_assets import upload_assets, download_assets
 from lib.integration_source import create_source_archive
 from lib.lifecycle_evidence import read_reviewed_evidence, verify_lifecycle_evidence
 from lib.publication_identity import validate_tag_roles, verify_source_tags
@@ -36,6 +37,7 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description="Guard exact Installer and Bundle publications")
     parser.add_argument("command", choices=(
         "source", "evidence", "images", "project-releases", "check-release", "create-draft", "publish-draft", "cleanup-draft",
+        "upload-assets", "download-assets",
     ))
     parser.add_argument("--workspace", type=Path, default=ROOT)
     parser.add_argument("--source", type=Path)
@@ -43,6 +45,7 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--receipt", type=Path)
     parser.add_argument("--notes", type=Path)
+    parser.add_argument("--assets", type=Path)
     parser.add_argument("--cabinet-tag")
     parser.add_argument("--stable", action="store_true")
     args = parser.parse_args(argv)
@@ -112,6 +115,11 @@ def main(argv: list[str]) -> int:
         raise ValueError("draft receipt tag does not match selected publication")
     if args.command == "cleanup-draft":
         api.cleanup(receipt, run)
+    elif args.command in {"upload-assets", "download-assets"}:
+        if not args.assets:
+            parser.error("asset transfer requires --assets")
+        transfer = upload_assets if args.command == "upload-assets" else download_assets
+        transfer(api, receipt, run, args.assets)
     else:
         if args.stable and os.environ.get("BUNDLE_TAG"):
             raise ValueError("stable Bundle promotion requires the separate candidate evidence gate")

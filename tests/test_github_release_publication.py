@@ -6,6 +6,22 @@ from urllib.error import HTTPError
 
 
 class GitHubReleasePublicationTests(unittest.TestCase):
+    def test_duplicate_or_invisible_owned_draft_cannot_be_published(self):
+        from lib.github_release_publication import GitHubReleases
+
+        receipt = {"repository": "OWNER/installer", "tag": "bundle-v2026.10.01",
+                   "id": 12, "marker": "<!-- publication-run: 123/1 -->"}
+        owned = {"id": 12, "tag_name": receipt["tag"], "draft": True, "body": receipt["marker"]}
+        foreign = dict(owned, id=13, body="another publication")
+        for visible in ([], [foreign], [owned, foreign]):
+            responses = [io.BytesIO(json.dumps(owned).encode()), io.BytesIO(json.dumps(visible).encode())]
+            with mock.patch("urllib.request.urlopen", side_effect=responses) as network:
+                with self.assertRaisesRegex(ValueError, "unique visible owned draft"):
+                    GitHubReleases(receipt["repository"], "fictional-token").publish(
+                        receipt, "123/1", prerelease=True,
+                    )
+                self.assertTrue(all(call.args[0].get_method() == "GET" for call in network.call_args_list))
+
     def test_promotion_refuses_mutable_draft_or_replaced_asset_without_a_patch(self):
         from lib.github_release_publication import GitHubReleases
 
@@ -67,7 +83,8 @@ class GitHubReleasePublicationTests(unittest.TestCase):
         release = {"id": 12, "tag_name": receipt["tag"], "draft": True,
                    "body": receipt["marker"]}
         for prerelease in (True, False):
-            responses = [io.BytesIO(json.dumps(release).encode()), io.BytesIO(b"{}")]
+            responses = [io.BytesIO(json.dumps(release).encode()),
+                         io.BytesIO(json.dumps([release]).encode()), io.BytesIO(b"{}")]
             with mock.patch("urllib.request.urlopen", side_effect=responses) as api:
                 GitHubReleases("OWNER/installer", "fictional-token").publish(receipt, "123/1", prerelease=prerelease)
                 request = api.call_args.args[0]

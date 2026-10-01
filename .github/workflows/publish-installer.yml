@@ -87,7 +87,8 @@ jobs:
           set -Eeuo pipefail
           python3 scripts/publication_control.py create-draft \
             --receipt "${RUNNER_TEMP}/publication-receipt.json" --notes "${RUNNER_TEMP}/release-notes.txt"
-          gh release upload "${INSTALLER_TAG}" release-assets/*
+          python3 scripts/publication_control.py upload-assets \
+            --receipt "${RUNNER_TEMP}/publication-receipt.json" --assets release-assets
 
       - name: Re-download and verify exact Installer assets
         env:
@@ -95,7 +96,8 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          gh release download "${INSTALLER_TAG}" --dir downloaded-assets
+          python3 scripts/publication_control.py download-assets \
+            --receipt "${RUNNER_TEMP}/publication-receipt.json" --assets downloaded-assets
           cmp "release-assets/${INSTALLER_TAG}.tar.gz" "downloaded-assets/${INSTALLER_TAG}.tar.gz"
           cmp "release-assets/${INSTALLER_TAG}.tar.gz.sha256" "downloaded-assets/${INSTALLER_TAG}.tar.gz.sha256"
           (cd downloaded-assets && sha256sum --check "${INSTALLER_TAG}.tar.gz.sha256")

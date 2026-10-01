@@ -238,7 +238,8 @@ jobs:
             "${LIFECYCLE_EVIDENCE_PATH}" "${LIFECYCLE_EVIDENCE_SHA}" > "${RUNNER_TEMP}/release-notes.txt"
           python3 scripts/publication_control.py create-draft \
             --receipt "${RUNNER_TEMP}/publication-receipt.json" --notes "${RUNNER_TEMP}/release-notes.txt"
-          gh release upload "${BUNDLE_TAG}" release-assets/*
+          python3 scripts/publication_control.py upload-assets \
+            --receipt "${RUNNER_TEMP}/publication-receipt.json" --assets release-assets
 
       - name: Download and verify published draft assets
         env:
@@ -247,8 +248,8 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          mkdir -p downloaded-assets
-          gh release download "${BUNDLE_TAG}" --dir downloaded-assets
+          python3 scripts/publication_control.py download-assets \
+            --receipt "${RUNNER_TEMP}/publication-receipt.json" --assets downloaded-assets
           python3 scripts/release_bundle_publication.py verify-download \
             --expected release-assets --downloaded downloaded-assets --release "${RELEASE_NAME}"
           diff release-assets/release.json downloaded-assets/release.json
