@@ -1,0 +1,445 @@
+SANDBOX ONLY: owner-authorized integration fixture, not production approval.
+Actual disposable full lifecycle and cleanup passed for the exact source below.
+Primary evidence remains BLOCKED; no primary publication or production action is authorized.
+
+Installer source: {"installer_sha": "75c49bec9c2a764e123fc0ef675f8c45fc22a1ab", "installer_tree_sha": "6606a783904f81959441b846e757004530728908", "archive_sha256": "eff17b515f9714dcefee88652d884e64598300941f3b9519d77bcf9e2e75752d"}
+Protected reference: Release Bundle v2026.10.01; target ubuntu-24.04/linux-amd64; no new publication
+SSH host key verified: [REDACTED_HOST_KEY_FINGERPRINTS]
+Ubuntu=24.04; free_disk_kb=4345852; memory_kb=2015220
+Disposable pre-run inventory verified; any existing integration source will be preserved
+Existing source preserved; starting full lifecycle
+[INFO] Установка базовых пакетов.
+Hit:1 http://security.ubuntu.com/ubuntu noble-security InRelease
+Hit:2 https://download.docker.com/linux/ubuntu noble InRelease
+Hit:3 http://archive.ubuntu.com/ubuntu noble InRelease
+Hit:4 http://archive.ubuntu.com/ubuntu noble-updates InRelease
+Hit:5 http://archive.ubuntu.com/ubuntu noble-backports InRelease
+Reading package lists...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+ca-certificates is already the newest version (20260601~24.04.1).
+curl is already the newest version (8.5.0-2ubuntu10.15).
+git is already the newest version (1:2.43.0-1ubuntu7.3).
+jq is already the newest version (1.7.1-3ubuntu0.24.04.2).
+gnupg is already the newest version (2.4.4-2ubuntu17.6).
+lsb-release is already the newest version (12.0-2).
+caddy is already the newest version (2.6.2-6ubuntu0.24.04.3).
+openssl is already the newest version (3.0.13-0ubuntu3.16).
+python3 is already the newest version (3.12.3-0ubuntu2.1).
+ufw is already the newest version (0.36.2-6).
+util-linux is already the newest version (2.39.3-9ubuntu6.6).
+0 upgraded, 0 newly installed, 0 to remove and 61 not upgraded.
+[INFO] Docker уже установлен.
+[INFO] Плагин Docker Compose уже установлен.
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0
+
+100   960  100   960    0     0    682      0  0:00:01  0:00:01 --:--:--   682
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+
+ 97 14.8M   97 14.5M    0     0  23.1M      0 --:--:-- --:--:-- --:--:-- 23.1M
+100 14.8M  100 14.8M    0     0  23.3M      0 --:--:-- --:--:-- --:--:-- 44.7M
+[INFO] UFW уже содержит базовые правила Bot Stack.
+[INFO] Включаю и запускаю Docker и Caddy.
+Synchronizing state of docker.service with SysV service script with /usr/lib/systemd/systemd-sysv-install.
+Executing: /usr/lib/systemd/systemd-sysv-install enable docker
+Проверка готовности сервера
+--------------------------
+Поддерживаемая ОС          OK
+Достаточно CPU, RAM и диска OK
+Порты 80/443 свободны или заняты Caddy OK
+Доступны DNS и внешний HTTPS OK
+[INFO] Сервер готов к установке.
+[INFO] Запуск предварительных проверок.
+[INFO] Клонирование репозитория: https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git
+Cloning into '/opt/bot-stack-integration/repos/bot-backend'...
+[INFO] Клонирование репозитория: https://github.com/alexforworkgpt-source/custom-cabinet.git
+Cloning into '/opt/bot-stack-integration/repos/bot-cabinet'...
+[INFO] Runtime Change committed: стек развёрнут и проверен.
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ Диагностика                                                                  │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ PROJECT_ROOT       /opt/bot-stack-integration                                │
+│ Hook/App           [REDACTED_TEST_DOMAIN] | [REDACTED_TEST_DOMAIN]            │
+│ Bot ref            877690a7039d1326b2c00eda3e297879b80c0678                  │
+│ Cabinet ref        5ee46023afc373fbfcef69f6793d440aa1d2cdd0                  │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+Docker доступен                    OK
+Caddy активен                       OK
+Docker активен                      OK
+Базовые правила UFW активны OK
+Runtime-порты не опубликованы OK
+Конфиг Caddy валиден          OK
+Порт бота слушает           OK
+Сервис bot запущен            OK
+Сервис postgres запущен       OK
+Сервис redis запущен          OK
+Webhook указывает на этот VPS OK
+App указывает на этот VPS   OK
+Cabinet runtime contract                   OK
+Webhook TLS и default deny                OK
+API через app-домен              OK
+Домен cabinet открывается  OK
+Remnawave API доступен из Bot    OK
+Remnawave webhook включён           OK
+Включены cabinet routes            [WARN] Outstanding setup action: запустите initial synchronization Remnawave из admin UI и подтвердите результат; API и webhook уже проверены.
+OK
+Включен Web API                     OK
+Настроен Mini App URL              OK
+Есть Cabinet JWT secret                OK
+Webhook Telegram совпадает с конфигом OK
+[INFO] Диагностика завершена успешно.
+fresh-install:committed
+non-root-runtime:verified
+[INFO] Runtime Change committed: стек развёрнут и проверен.
+repeat-install:committed
+План изменений
+---------------
+bot.override.env: LOG_LEVEL: <unset> -> DEBUG
+
+[INFO] Runtime Change committed: настройки применены и проверены.
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ Диагностика                                                                  │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ PROJECT_ROOT       /opt/bot-stack-integration                                │
+│ Hook/App           [REDACTED_TEST_DOMAIN] | [REDACTED_TEST_DOMAIN]            │
+│ Bot ref            877690a7039d1326b2c00eda3e297879b80c0678                  │
+│ Cabinet ref        5ee46023afc373fbfcef69f6793d440aa1d2cdd0                  │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+Docker доступен                    OK
+Caddy активен                       OK
+Docker активен                      OK
+Базовые правила UFW активны OK
+Runtime-порты не опубликованы OK
+Конфиг Caddy валиден          OK
+Порт бота слушает           OK
+Сервис bot запущен            OK
+Сервис postgres запущен       OK
+Сервис redis запущен          OK
+Webhook указывает на этот VPS OK
+App указывает на этот VPS   OK
+Cabinet runtime contract                   OK
+Webhook TLS и default deny                OK
+API через app-домен              OK
+Домен cabinet открывается  OK
+Remnawave API доступен из Bot    OK
+Remnawave webhook включён           OK
+[WARN] Outstanding setup action: запустите initial synchronization Remnawave из admin UI и подтвердите результат; API и webhook уже проверены.
+Включены cabinet routes            OK
+Включен Web API                     OK
+Настроен Mini App URL              OK
+Есть Cabinet JWT secret                OK
+Webhook Telegram совпадает с конфигом OK
+[INFO] Диагностика завершена успешно.
+settings-draft:committed
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.012s
+
+OK
+legacy-migration:verified
+ Network bedolaga-bot-stack-integration-20eb7c07-staging_default Creating
+ Network bedolaga-bot-stack-integration-20eb7c07-staging_default Creating
+ Volume bedolaga-bot-stack-integration-20eb7c07-staging_postgres_data Creating
+ Volume bedolaga-bot-stack-integration-20eb7c07-staging_postgres_data Creating
+ Volume bedolaga-bot-stack-integration-20eb7c07-staging_redis_data Creating
+ Volume bedolaga-bot-stack-integration-20eb7c07-staging_redis_data Creating
+ Volume bedolaga-bot-stack-integration-20eb7c07-staging_redis_data Created
+ Volume bedolaga-bot-stack-integration-20eb7c07-staging_redis_data Created
+ Volume bedolaga-bot-stack-integration-20eb7c07-staging_postgres_data Created
+ Volume bedolaga-bot-stack-integration-20eb7c07-staging_postgres_data Created
+ Network bedolaga-bot-stack-integration-20eb7c07-staging_default Created
+ Network bedolaga-bot-stack-integration-20eb7c07-staging_default Created
+ Container bedolaga-bot-stack-integration-20eb7c07-staging-redis-1 Creating
+ Container bedolaga-bot-stack-integration-20eb7c07-staging-postgres-1 Creating
+ Container bedolaga-bot-stack-integration-20eb7c07-staging-redis-1 Created
+ Container bedolaga-bot-stack-integration-20eb7c07-staging-postgres-1 Created
+ Container bedolaga-bot-stack-integration-20eb7c07-staging-redis-1 Starting
+ Container bedolaga-bot-stack-integration-20eb7c07-staging-postgres-1 Starting
+ Container bedolaga-bot-stack-integration-20eb7c07-staging-redis-1 Started
+ Container bedolaga-bot-stack-integration-20eb7c07-staging-postgres-1 Started
+ Container bedolaga-bot-stack-integration-20eb7c07-staging-postgres-1 Waiting
+ Container bedolaga-bot-stack-integration-20eb7c07-staging-redis-1 Waiting
+ Container bedolaga-bot-stack-integration-20eb7c07-staging-postgres-1 Healthy
+ Container bedolaga-bot-stack-integration-20eb7c07-staging-redis-1 Healthy
+ Container bedolaga-bot-stack-integration-20eb7c07-staging-redis-1 Stopping
+ Container bedolaga-bot-stack-integration-20eb7c07-staging-postgres-1 Stopping
+ Container bedolaga-bot-stack-integration-20eb7c07-staging-redis-1 Stopped
+ Container bedolaga-bot-stack-integration-20eb7c07-staging-redis-1 Removing
+ Container bedolaga-bot-stack-integration-20eb7c07-staging-postgres-1 Stopped
+ Container bedolaga-bot-stack-integration-20eb7c07-staging-postgres-1 Removing
+ Container bedolaga-bot-stack-integration-20eb7c07-staging-redis-1 Removed
+ Container bedolaga-bot-stack-integration-20eb7c07-staging-postgres-1 Removed
+ Network bedolaga-bot-stack-integration-20eb7c07-staging_default Removing
+ Volume bedolaga-bot-stack-integration-20eb7c07-staging_redis_data Removing
+ Volume bedolaga-bot-stack-integration-20eb7c07-staging_postgres_data Removing
+ Volume bedolaga-bot-stack-integration-20eb7c07-staging_redis_data Removed
+ Network bedolaga-bot-stack-integration-20eb7c07-staging_default Removed
+ Volume bedolaga-bot-stack-integration-20eb7c07-staging_postgres_data Removed
+two-project-isolation:verified
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+
+100   960  100   960    0     0   2623      0 --:--:-- --:--:-- --:--:--  2623
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+
+ 38 14.8M   38 5900k    0     0  12.7M      0  0:00:01 --:--:--  0:00:01 12.7M
+100 14.8M  100 14.8M    0     0  24.9M      0 --:--:-- --:--:-- --:--:-- 63.6M
+Release Bundle: 2026.10.01
+Bot SHA:        877690a7039d1326b2c00eda3e297879b80c0678
+Cabinet repo:   https://github.com/alexforworkgpt-source/custom-cabinet.git
+Cabinet SHA:    5ee46023afc373fbfcef69f6793d440aa1d2cdd0
+PostgreSQL:     postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23
+Redis:          redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2
+[INFO] Release Bundle 2026.10.01 успешно применён и проверен.
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ Статус установки                                                             │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ PROJECT_ROOT       /opt/bot-stack-integration                                │
+│ Hook домен    [REDACTED_TEST_DOMAIN]                                         │
+│ App домен     [REDACTED_TEST_DOMAIN]                                          │
+│ Порт бота  8080                                                              │
+│ Репозиторий bot /opt/bot-stack-integration/repos/bot-backend                 │
+│ Репозиторий cabinet /opt/bot-stack-integration/repos/bot-cabinet             │
+│ Целевая bot 877690a7039d1326b2c00eda3e297879b80c0678                         │
+│ Текущая bot v4.15.0                                                          │
+│ Целевая cabinet 5ee46023afc373fbfcef69f6793d440aa1d2cdd0                     │
+│ Текущая cabinet cabinet-v2026.10.01.1                                        │
+│ Release Bundle     2026.10.01                                                │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ Проверка сервисов                                                            │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ Docker             активен                                                   │
+│ Caddy              активен                                                   │
+│ Локальный API 200                                                            │
+│ Hook default deny  404                                                       │
+│ App API            200                                                       │
+│ App frontend       200                                                       │
+│ Pending apply      нет                                                       │
+│ TG webhook         https://[REDACTED_TEST_DOMAIN]/webhook | pending=0 | last_error=- │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+NAME                                                 IMAGE                                                                              COMMAND                  SERVICE    CREATED         STATUS                    PORTS
+bedolaga-bot-stack-integration-20eb7c07-bot-1        sha256:7a35ede1b8d6f84873d60afff8fac8d1439c9b14885bd6c8a9cf4e1f97ff9e1a            "python main.py"         bot        2 minutes ago   Up 29 seconds (healthy)   127.0.0.1:8080->8080/tcp
+bedolaga-bot-stack-integration-20eb7c07-postgres-1   postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23   "docker-entrypoint.s…"   postgres   3 minutes ago   Up 3 minutes (healthy)    5432/tcp
+bedolaga-bot-stack-integration-20eb7c07-redis-1      redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2      "docker-entrypoint.s…"   redis      3 minutes ago   Up 3 minutes (healthy)    6379/tcp
+protected-update:committed
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+
+100   960  100   960    0     0   2968      0 --:--:-- --:--:-- --:--:--  2968
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+
+100 14.8M  100 14.8M    0     0  15.6M      0 --:--:-- --:--:-- --:--:-- 15.6M
+Release Bundle: 2026.10.01
+Bot SHA:        877690a7039d1326b2c00eda3e297879b80c0678
+Cabinet repo:   https://github.com/alexforworkgpt-source/custom-cabinet.git
+Cabinet SHA:    5ee46023afc373fbfcef69f6793d440aa1d2cdd0
+PostgreSQL:     postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23
+Redis:          redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2
+[ERROR] Release Bundle 2026.10.01 не применён; предыдущий runtime и PostgreSQL восстановлены и проверены.
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ Диагностика                                                                  │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ PROJECT_ROOT       /opt/bot-stack-integration                                │
+│ Hook/App           [REDACTED_TEST_DOMAIN] | [REDACTED_TEST_DOMAIN]            │
+│ Bot ref            877690a7039d1326b2c00eda3e297879b80c0678                  │
+│ Cabinet ref        5ee46023afc373fbfcef69f6793d440aa1d2cdd0                  │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+Docker доступен                    OK
+Caddy активен                       OK
+Docker активен                      OK
+Базовые правила UFW активны OK
+Runtime-порты не опубликованы OK
+Конфиг Caddy валиден          OK
+Порт бота слушает           OK
+Сервис bot запущен            OK
+Сервис postgres запущен       OK
+Сервис redis запущен          OK
+Webhook указывает на этот VPS OK
+App указывает на этот VPS   OK
+Cabinet runtime contract                   OK
+Webhook TLS и default deny                OK
+API через app-домен              OK
+Домен cabinet открывается  OK
+Remnawave API доступен из Bot    OK
+Remnawave webhook включён           OK
+[WARN] Outstanding setup action: запустите initial synchronization Remnawave из admin UI и подтвердите результат; API и webhook уже проверены.
+Включены cabinet routes            OK
+Включен Web API                     OK
+Настроен Mini App URL              OK
+Есть Cabinet JWT secret                OK
+Webhook Telegram совпадает с конфигом OK
+[INFO] Диагностика завершена успешно.
+protected-update-injected-failure:rolled-back-verified
+ Image bedolaga-bot-stack-integration-20eb7c07-bot Building
+#1 [internal] load local bake definitions
+#1 reading from stdin 592B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 2.81kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/python:3.13-slim
+#3 DONE 0.4s
+
+#4 [internal] load metadata for ghcr.io/astral-sh/uv:0.10.8
+#4 DONE 0.5s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 558B done
+#5 DONE 0.0s
+
+#6 [builder 1/5] FROM docker.io/library/python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa725dd7cb2cd3b
+#6 resolve docker.io/library/python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa725dd7cb2cd3b 0.0s done
+#6 DONE 0.0s
+
+#7 FROM ghcr.io/astral-sh/uv:0.10.8@sha256:88234bc9e09c2b2f6d176a3daf411419eb0370d450a08129257410de9cfafd2a
+#7 resolve ghcr.io/astral-sh/uv:0.10.8@sha256:88234bc9e09c2b2f6d176a3daf411419eb0370d450a08129257410de9cfafd2a 0.0s done
+#7 DONE 0.0s
+
+#8 [internal] load build context
+#8 transferring context: 53.96kB 0.1s done
+#8 DONE 0.1s
+
+#9 [builder 2/5] RUN apt-get update && apt-get install -y --no-install-recommends     gcc     && rm -rf /var/lib/apt/lists/*
+#9 CACHED
+
+#10 [builder 4/5] WORKDIR /app
+#10 CACHED
+
+#11 [builder 5/5] RUN --mount=type=cache,target=/root/.cache/uv     --mount=type=bind,source=pyproject.toml,target=pyproject.toml     --mount=type=bind,source=uv.lock,target=uv.lock     uv sync --frozen --no-dev
+#11 CACHED
+
+#12 [stage-1 2/8] COPY --from=builder /app/.venv /app/.venv
+#12 CACHED
+
+#13 [stage-1 6/8] WORKDIR /app
+#13 CACHED
+
+#14 [builder 3/5] COPY --from=ghcr.io/astral-sh/uv:0.10.8 /uv /uvx /bin/
+#14 CACHED
+
+#15 [stage-1 3/8] RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
+#15 CACHED
+
+#16 [stage-1 4/8] RUN /usr/local/bin/python -m pip uninstall -y setuptools pip
+#16 CACHED
+
+#17 [stage-1 7/8] COPY --chown=app:app . .
+#17 CACHED
+
+#18 [stage-1 5/8] RUN groupadd -g 1000 app &&     useradd -u 1000 -g 1000 -m -s /bin/bash app
+#18 CACHED
+
+#19 [stage-1 8/8] RUN mkdir -p logs data uploads/images uploads/videos uploads/thumbnails locales &&     chown -R app:app logs data uploads locales
+#19 CACHED
+
+#20 exporting to image
+#20 exporting layers done
+#20 exporting manifest sha256:8f4aeac1b1b03a6e4d1ae0e308ed347a079df1cfc1589f8de35814b8267a5d0d done
+#20 exporting config sha256:6bea61ca45bd970c0788dceeffb4da5e6153beb43e391e7d72ef4141fd6b8def done
+#20 exporting attestation manifest sha256:051b62c55a7e96438d0cc124e37754fed371b5a2bc0d5787413b60809cee0a7a 0.0s done
+#20 exporting manifest list sha256:de665faf39343e95ed7125bebba3afdece6e3e00e6400080c49bb46b972e8d08 0.0s done
+#20 naming to docker.io/library/bedolaga-bot-stack-integration-20eb7c07-bot:latest done
+#20 unpacking to docker.io/library/bedolaga-bot-stack-integration-20eb7c07-bot:latest 0.0s done
+#20 DONE 0.1s
+
+#21 resolving provenance for metadata file
+#21 DONE 0.0s
+ Image bedolaga-bot-stack-integration-20eb7c07-bot Built
+ Container bedolaga-bot-stack-integration-20eb7c07-postgres-1 Recreate
+ Container bedolaga-bot-stack-integration-20eb7c07-redis-1 Recreate
+ Container bedolaga-bot-stack-integration-20eb7c07-redis-1 Recreated
+ Container bedolaga-bot-stack-integration-20eb7c07-postgres-1 Recreated
+ Container bedolaga-bot-stack-integration-20eb7c07-bot-1 Recreate
+ Container bedolaga-bot-stack-integration-20eb7c07-bot-1 Recreated
+ Container bedolaga-bot-stack-integration-20eb7c07-redis-1 Starting
+ Container bedolaga-bot-stack-integration-20eb7c07-postgres-1 Starting
+ Container bedolaga-bot-stack-integration-20eb7c07-redis-1 Started
+ Container bedolaga-bot-stack-integration-20eb7c07-postgres-1 Started
+ Container bedolaga-bot-stack-integration-20eb7c07-postgres-1 Waiting
+ Container bedolaga-bot-stack-integration-20eb7c07-redis-1 Waiting
+ Container bedolaga-bot-stack-integration-20eb7c07-postgres-1 Healthy
+ Container bedolaga-bot-stack-integration-20eb7c07-redis-1 Healthy
+ Container bedolaga-bot-stack-integration-20eb7c07-bot-1 Starting
+ Container bedolaga-bot-stack-integration-20eb7c07-bot-1 Started
+ Container bedolaga-bot-stack-integration-20eb7c07-bot-1 Waiting
+ Container bedolaga-bot-stack-integration-20eb7c07-postgres-1 Waiting
+ Container bedolaga-bot-stack-integration-20eb7c07-redis-1 Waiting
+ Container bedolaga-bot-stack-integration-20eb7c07-postgres-1 Healthy
+ Container bedolaga-bot-stack-integration-20eb7c07-redis-1 Healthy
+ Container bedolaga-bot-stack-integration-20eb7c07-bot-1 Healthy
+{"level":"info","ts":1790889109.6954925,"msg":"using provided configuration","config_file":"/etc/caddy/Caddyfile","config_adapter":""}
+{"level":"warn","ts":1790889109.7013762,"logger":"http","msg":"server is listening only on the HTTP port, so no automatic HTTPS will be applied to this server","server_name":"srv1","http_port":80}
+{"level":"info","ts":1790889109.7015758,"logger":"http","msg":"server is listening only on the HTTPS port but has no TLS connection policies; adding one to enable TLS","server_name":"srv0","https_port":443}
+{"level":"info","ts":1790889109.7016544,"logger":"http","msg":"enabling automatic HTTP->HTTPS redirects","server_name":"srv0"}
+{"level":"info","ts":1790889109.7030628,"logger":"tls.cache.maintenance","msg":"started background certificate maintenance","cache":"0xc000182cb0"}
+{"level":"info","ts":1790889109.7031403,"logger":"tls.cache.maintenance","msg":"stopped background certificate maintenance","cache":"0xc000182cb0"}
+[INFO] Обновление Telegram webhook на https://[REDACTED_TEST_DOMAIN]/webhook
+[INFO] Telegram webhook обновлен.
+file-recovery-and-launcher:verified
+[WARN] Будут удалены все файлы развёрнутого проекта, кроме директории installer.
+[INFO] Telegram webhook удалён.
+ Container bedolaga-bot-stack-integration-20eb7c07-bot-1 Stopping
+ Container bedolaga-bot-stack-integration-20eb7c07-bot-1 Stopped
+ Container bedolaga-bot-stack-integration-20eb7c07-bot-1 Removing
+ Container bedolaga-bot-stack-integration-20eb7c07-bot-1 Removed
+ Container bedolaga-bot-stack-integration-20eb7c07-postgres-1 Stopping
+ Container bedolaga-bot-stack-integration-20eb7c07-redis-1 Stopping
+ Container bedolaga-bot-stack-integration-20eb7c07-redis-1 Stopped
+ Container bedolaga-bot-stack-integration-20eb7c07-redis-1 Removing
+ Container bedolaga-bot-stack-integration-20eb7c07-postgres-1 Stopped
+ Container bedolaga-bot-stack-integration-20eb7c07-postgres-1 Removing
+ Container bedolaga-bot-stack-integration-20eb7c07-redis-1 Removed
+ Container bedolaga-bot-stack-integration-20eb7c07-postgres-1 Removed
+ Volume bedolaga-bot-stack-integration-20eb7c07_postgres_data Removing
+ Volume bedolaga-bot-stack-integration-20eb7c07_redis_data Removing
+ Network bedolaga-bot-stack-integration-20eb7c07_default Removing
+ Volume bedolaga-bot-stack-integration-20eb7c07_redis_data Removed
+ Network bedolaga-bot-stack-integration-20eb7c07_default Removed
+ Volume bedolaga-bot-stack-integration-20eb7c07_postgres_data Removed
+{"level":"info","ts":1790889125.1385515,"msg":"using provided configuration","config_file":"/etc/caddy/Caddyfile","config_adapter":""}
+{"level":"warn","ts":1790889125.1387322,"msg":"No files matching import glob pattern","pattern":"/etc/caddy/conf.d/*.caddy"}
+{"level":"warn","ts":1790889125.139655,"logger":"http","msg":"server is listening only on the HTTP port, so no automatic HTTPS will be applied to this server","server_name":"srv0","http_port":80}
+{"level":"info","ts":1790889125.1397448,"logger":"tls.cache.maintenance","msg":"started background certificate maintenance","cache":"0xc000182b60"}
+{"level":"info","ts":1790889125.1397517,"logger":"tls.cache.maintenance","msg":"stopped background certificate maintenance","cache":"0xc000182b60"}
+[INFO] Полное удаление подтверждено; завершаю очистку project root.
+[INFO] Полное удаление выполнено. Installer сохранён.
+uninstall:stack-removed-management-preserved
+[INFO] Ubuntu 24.04 full lifecycle integration passed.
+cleanup project=absent caddy=absent env=absent containers=0 volumes=0
+management launcher=executable current=executable log=600
+Remote integration cleanup verified.
+FULL LIFECYCLE PASS; final-postflight PASS; public evidence review still required

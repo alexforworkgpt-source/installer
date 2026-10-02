@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "kind": "installer-lifecycle",
+  "result": "PASS",
+  "installer": {
+    "installer_sha": "75c49bec9c2a764e123fc0ef675f8c45fc22a1ab",
+    "installer_tree_sha": "6606a783904f81959441b846e757004530728908",
+    "archive_sha256": "eff17b515f9714dcefee88652d884e64598300941f3b9519d77bcf9e2e75752d"
+  },
+  "protected": {
+    "bot_repository": "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",
+    "bot_sha": "877690a7039d1326b2c00eda3e297879b80c0678",
+    "postgres_image": "postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23",
+    "redis_image": "redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2",
+    "backend_contract": "1",
+    "bot_backend_contract": "1",
+    "cabinet_backend_contract": "1",
+    "configuration_schema": 1,
+    "manifest_schema": 2,
+    "migration_policy": "rollback-compatible",
+    "target_os": "ubuntu-24.04",
+    "target_platform": "linux/amd64"
+  },
+  "evidence_url": "https://github.com/alexforworkgpt-source/installer-release-process-sandbox-20261001/blob/ea5972f549ac67f73633a43eadcd0aee46c8a877/releases/evidence/sandbox-lifecycle-final-75c49be-20261002.log",
+  "log_path": "releases/evidence/primary-lifecycle-reused-75c49be-20261002.log",
+  "log_sha256": "7db67ac76a609258b383ccfabfda3cfa407a8ff73218bfe79fbc4a942c99a69d"
+}
