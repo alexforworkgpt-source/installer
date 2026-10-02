@@ -1,8 +1,13 @@
 # План разделения Releases Installer, Custom Cabinet и Release Bundle
 
-Status: In progress — этапы 1–4 подготовлены, локальная часть этапа 5 проверена<br>
+Status: Complete — ADR 0001 и первый primary выпуск завершены 2026-10-02<br>
 Date: 2026-10-01<br>
 Decision: [ADR 0001](adr/0001-independent-project-releases-and-bundles.md)
+
+Актуальный итог: [первый primary выпуск завершён](primary-first-release-completion-20261002.md).
+Три отдельные Releases stable; обязательные gates пройдены; `make_latest=false`.
+Production и backend не изменены. Принятые OPEN/BLOCKED ограничения сохранены.
+Ниже сохранены исторические снимки подготовки; они не определяют текущий статус.
 
 Локально реализованы безопасный source archive и разделение публикаций
 Installer/Bundle, связанные lifecycle records и runtime image guards.
@@ -316,3 +321,14 @@ Bundle `v2026.09.29` и ранние source SHA без собственных ta
 Итоговый критерий: Cabinet можно выпустить с прежним Installer, затем собрать
 и проверить новый Bundle; старые Bundle URL продолжают поддерживаться,
 а production выбирается отдельным разрешённым переходом, без автообновления.
+
+## Завершение первого primary выпуска — 2026-10-02
+
+Все этапы ADR 0001 и разрешённый первый primary выпуск завершены.
+Installer `installer-v2026.10.02`, Custom Cabinet `cabinet-v2026.10.02.1`
+и Release Bundle `bundle-v2026.10.02.1` опубликованы как stable.
+[Итоговый отчёт](primary-first-release-completion-20261002.md) связывает
+точные SHA, публичные assets, CI, принятое lifecycle evidence, новый targeted smoke,
+cleanup и metadata-only promotion. Полный lifecycle без изменения identities
+не повторялся. Оставшиеся ограничения приняты владельцем и не объявлены PASS.
+Действия на production и изменение backend в этот результат не входят.

@@ -1,16 +1,18 @@
 # ADR 0001: отдельные Releases Installer, Custom Cabinet и Release Bundle
 
-Status: Accepted — направление локальной реализации<br>
+Status: Accepted<br>
 Date: 2026-10-01<br>
-Implementation: In progress — этапы 1–2 подготовлены локально<br>
+Implementation: Complete — первый primary выпуск опубликован и проверен 2026-10-02<br>
 Plan: [План реализации](../release-process-implementation-plan.md)
 
-Этот ADR фиксирует выбранное направление после исследования истории и разрешения
-продолжить локальную реализацию. Разделение Installer/Bundle подготовлено
-локально, но ещё не опубликовано в GitHub; собственный Cabinet workflow
-и stable promotion остаются следующими этапами. Актуальные inputs и границы —
-в [RUNBOOK.md](../../RUNBOOK.md). Создание документа не разрешает push, изменение
-настроек GitHub, публикацию Releases или действия на production.
+ADR 0001 реализован: отдельные Installer, Custom Cabinet и Release Bundle
+опубликованы как stable на точных проверенных SHA. Обязательные integrity,
+source, lifecycle reuse и targeted smoke/cleanup gates пройдены.
+[Итог первого primary выпуска](../primary-first-release-completion-20261002.md)
+содержит точные Releases, evidence и принятые ограничения. `make_latest=false`;
+production, backend и GitHub settings не изменены. Исторические разделы ниже
+описывают исходную точку исследования. Последующие выпуски выполняются
+по [RUNBOOK.md](../../RUNBOOK.md) при отдельной необходимости и разрешении.
 
 ## Context
 
