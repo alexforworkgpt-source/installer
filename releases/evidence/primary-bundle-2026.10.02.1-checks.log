@@ -1,0 +1,54 @@
+PRIMARY ADR 0001 RELEASE BUNDLE — actual technical gate evidence
+Prepared at 2026-10-02T17:57:45.138212+00:00
+Installer source: 75c49bec9c2a764e123fc0ef675f8c45fc22a1ab; tree: 6606a783904f81959441b846e757004530728908; archive: eff17b515f9714dcefee88652d884e64598300941f3b9519d77bcf9e2e75752d
+Cabinet source: 8fb8cbec19d651fcfaee3bce32621031b3e69965; Bundle: bundle-v2026.10.02.1; identity: c6c048cce8ad679706c48f35922e98ee36c0cc1923ab801f9f682bb80d607911
+Publication run: https://github.com/alexforworkgpt-source/installer/actions/runs/37026278986; attempt: 1
+Cabinet source gates: https://github.com/alexforworkgpt-source/custom-cabinet/actions/runs/37026262757; completed SUCCESS; 991 frontend + 15 publication tests per Node 24/26; lint/typecheck/build/CodeQL SUCCESS
+Cabinet publication log SHA-256: 965038dbb24b48a5b65be6b821bd5940f8ec7441aa60e736877c9322883c0d71
+Public project and Bundle downloads: PASS, unauthenticated, 10 assets total; all API digests/sizes/checksums verified; Bundle six assets equal locally reviewed bytes.
+Installer source archive, manifest/provenance, Cabinet archive safety, immutable source/tag binding: PASS.
+Lifecycle: PASS exact reviewed reuse, 37289e3cd3b135f4b5a31f2b7a0291ccaede081c / releases/evidence/primary-lifecycle-reused-75c49be-20261002.json; original SANDBOX provenance/hash retained; full lifecycle NOT repeated.
+Transition: NOT_REQUIRED relative to stable v2026.10.01; Bot repository/SHA, PostgreSQL/Redis digests, backend/configuration/manifest contracts and migration policy unchanged. No between-version transition PASS is claimed.
+Compatibility evidence: https://github.com/alexforworkgpt-source/custom-cabinet/blob/3fed554a456bb7babcdec288d3c81f39de6fd816/releases/evidence/compatibility-evidence-8fb8cbe-877690a7-20261002.md
+Compatibility gate PASS applies ONLY to owner-accepted PASS_SOURCE_CONTRACT_SCOPE for this exact Cabinet/Bot: 145 Bot tests with DB/service doubles, 578/579 method/path matches, 11 mock browser scenarios PASS / 1 configured SKIP.
+This is NOT full authenticated/live response-field/payment/Telegram/renewal/concurrency/panel compatibility. All corresponding OPEN/BLOCKED limitations remain explicit and owner-accepted for this release.
+Actual targeted fresh-install technical smoke and cleanup: PASS; exact downloaded Bundle used on designated disposable Ubuntu 24.04.
+
+PRIMARY ADR 0001 TARGETED SMOKE; designated disposable Ubuntu 24.04 only
+Source Installer 75c49bec9c2a764e123fc0ef675f8c45fc22a1ab; Cabinet 8fb8cbec19d651fcfaee3bce32621031b3e69965; Bundle bundle-v2026.10.02.1
+disposable_confirmation=yes; target=designated-integration-vps; production_not_accessed=true
+management_runtime_files_verified=38
+outcome=committed
+release=2026.10.02.1
+bundle_identity=c6c048cce8ad679706c48f35922e98ee36c0cc1923ab801f9f682bb80d607911
+bot_sha=877690a7039d1326b2c00eda3e297879b80c0678
+cabinet_sha=8fb8cbec19d651fcfaee3bce32621031b3e69965
+cabinet_artifact_sha256=a068888441ab8cc996a45c9f60fc2f4c750d23efa389041b255c6138f2d3ff7e
+containers=3
+cabinet_http=200
+instruction_http=200
+branding_http=200
+health_status=ok
+webhook_default_http=404
+cache_control=no-store
+test_environment=absent
+cleanup_postflight=PASS
+targeted_smoke=PASS
+local_server_env_unchanged=true
+
+Assets SHA-256:
+cabinet-dist.tar.gz: a068888441ab8cc996a45c9f60fc2f4c750d23efa389041b255c6138f2d3ff7e
+cabinet-dist.tar.gz.sha256: cefc5eea66c535d17c77fca46c82a6c21ce9b8332258ac1744d214151de0ebaf
+installer-2026.10.02.1.tar.gz: eff17b515f9714dcefee88652d884e64598300941f3b9519d77bcf9e2e75752d
+installer-2026.10.02.1.tar.gz.sha256: f6a483c9492ebce5779542dcb1590ec289a2369b6977ca27dd34cf0ed06c95b4
+release-provenance.json: 8bde7029d02c492fff679456f54da5a75ded2fe71879e35196d4b326d68a8d65
+release.json: 9f604aca9276d52923a86171b1ffb80eb3aa22f2b56b8ddfea4469fd3e24ca6f
+
+Known limitations retained:
+OPEN classic-auto-purchase: Backend subscription_purchase top-up dispatch remains unsupported; real server-side renewal is not proved.
+OPEN unused-legacy-email-wrapper: createEmail declares POST /cabinet/admin/broadcasts/email, absent from exact Bot schema. Static search finds only its declaration; current form uses supported createCombined -> /send. Wrapper unchanged from published source.
+BLOCKED exact-compatibility-evidence: Owner accepted limited source-contract evidence for exact Cabinet/Bot: 145 Bot tests, 578/579 method/path matches and 11 mocked browser scenarios. Full response-field parity and actual authenticated staging remain unverified; no complete runtime compatibility PASS is claimed.
+BLOCKED new-bundle-smoke: A new Release Bundle has not been built/published/installed or smoke-tested.
+BLOCKED physical-platform-and-payment: Real Telegram Android/iOS, physical accessibility, payment, renewal, concurrency and panel flows remain outside existing proof.
+
+Owner explicitly authorized these gates, evidence adoption and metadata-only stable promotion; make_latest=false. Production/backend/runtime source/settings not changed.
