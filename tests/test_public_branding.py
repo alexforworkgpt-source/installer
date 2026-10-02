@@ -78,11 +78,13 @@ class PublicBrandingTests(unittest.TestCase):
         workflow = (
             ROOT / ".github" / "workflows" / "publish-release-bundle.yml"
         ).read_text(encoding="utf-8")
-        self.assertIn('--title "Installer ${RELEASE_NAME}"', workflow)
-        self.assertIn('--notes "Immutable Release Bundle ${RELEASE_NAME}"', workflow)
+        control = (ROOT / "scripts" / "publication_control.py").read_text(encoding="utf-8")
+        self.assertIn('f"Release Bundle {os.environ[\'RELEASE_NAME\']}"', control)
+        self.assertIn('f"Installer {os.environ[\'INSTALLER_TAG\']', control)
         self.assertIn("cabinet_repository: $cabinet_repository", workflow)
         self.assertIn("parts.username is not None", workflow)
-        self.assertIn('test "${LIFECYCLE_SHA}" = "$(git rev-parse HEAD)"', workflow)
+        self.assertIn("scripts/publication_control.py evidence", workflow)
+        self.assertIn('--bundle-tag "${BUNDLE_TAG}"', workflow)
 
     def test_exact_upstream_attribution_is_preserved(self) -> None:
         expected = (UPSTREAM_BOT_URL, UPSTREAM_CABINET_URL)

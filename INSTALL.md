@@ -8,7 +8,7 @@
 - два домена, уже направленные на сервер
 - возможность открыть `80/tcp`, `443/tcp` и `443/udp` во внешнем firewall провайдера VPS
 - доступность внешней API-панели с сервера
-- HTTPS URL опубликованного `release.json` из GitHub Release installer
+- HTTPS URL `release.json` из выбранного стабильного Release Bundle в репозитории Installer
 
 ## Что подготовить заранее
 
@@ -88,7 +88,7 @@ Cabinet repository вместе с SHA. Installer из `v2026.08.3` и стар�
 
 Для существующей установки:
 
-1. скачайте архив Installer нужного tag и его `.sha256` из публичного Release;
+1. скачайте архив Installer выбранной проверенной версии и его `.sha256` из публичного Release;
 2. проверьте sidecar checksum командой `sha256sum --check`;
 3. распакуйте архив в отдельный каталог вне `PROJECT_ROOT`;
 4. запустите из распакованного каталога `sudo bash bot-menu.sh`;
@@ -98,6 +98,16 @@ Cabinet repository вместе с SHA. Installer из `v2026.08.3` и стар�
 Не применяйте schema v2 через старую management-копию командой `sudo vpn` и не
 заменяйте `/opt/bedolaga-installer/current` вручную. Новый `bot-menu.sh`
 устанавливает версионированную management-копию автоматически.
+
+В подготовленном новом процессе собственный Installer Release использует tag
+`installer-vYYYY.MM.DD[.N]` и файл `<installer_tag>.tar.gz`; Release Bundle —
+tag `bundle-vYYYY.MM.DD[.N]`, файл `installer-<release>.tar.gz` и `release.json`.
+Версии Installer и Bundle могут отличаться: Bundle tag указывает на выбранный
+Installer commit. Исторические `v2026.*` URL и имена файлов сохраняются.
+Standalone Installer Release не содержит `release.json` или Cabinet artifact.
+Для установки выбирайте точный стабильный Bundle; public prerelease служит
+кандидатом для разрешённых тестов. Новый процесс ещё не проверен на GitHub:
+[порядок публикации](RUNBOOK.md#публикация-нового-release-bundle).
 
 Базовый профиль UFW разрешает текущий SSH-порт, `80/tcp`, `443/tcp` и
 `443/udp`, запрещает прочие входящие соединения и оставляет исходящие

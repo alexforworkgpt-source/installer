@@ -16,6 +16,67 @@ from scripts.release_bundle_publication import (
 
 
 class ReleaseBundlePublicationTests(unittest.TestCase):
+    def test_downloaded_archive_and_replaced_checksum_cannot_pass_verification(self) -> None:
+        from scripts.release_bundle_publication import verify_downloaded_assets
+
+        with tempfile.TemporaryDirectory() as directory:
+            expected, downloaded = Path(directory) / "expected", Path(directory) / "downloaded"
+            expected.mkdir()
+            downloaded.mkdir()
+            names = ("cabinet-dist.tar.gz", "cabinet-dist.tar.gz.sha256", "release.json",
+                     "release-provenance.json", "installer-2026.10.01.tar.gz",
+                     "installer-2026.10.01.tar.gz.sha256")
+            for name in names:
+                (expected / name).write_bytes(b"trusted fixture")
+                (downloaded / name).write_bytes(b"trusted fixture")
+            verify_downloaded_assets(expected, downloaded, "2026.10.01")
+            (downloaded / "cabinet-dist.tar.gz").write_bytes(b"different archive")
+            (downloaded / "cabinet-dist.tar.gz.sha256").write_bytes(b"different matching checksum")
+            with self.assertRaisesRegex(ValueError, "differ"):
+                verify_downloaded_assets(expected, downloaded, "2026.10.01")
+
+    def test_new_publication_rejects_swapped_or_mismatched_tag_roles(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            for source, bundle in (
+                ("bundle-v2026.10.01", "bundle-v2026.10.02"),
+                ("installer-v2026.10.01", "installer-v2026.10.01"),
+                ("installer-v2026.10.01", "bundle-v2026.10.03"),
+            ):
+                with self.subTest(source=source, bundle=bundle), self.assertRaises(ValueError):
+                    create_release_manifest(
+                        output_path=Path(directory) / "release.json", release="2026.10.02",
+                        installer_repository="OWNER/installer", installer_tag=source, bundle_tag=bundle,
+                        bot_repository="https://github.com/OWNER/bot.git", bot_sha="b" * 40,
+                        cabinet_repository="https://github.com/OWNER/custom-cabinet.git", cabinet_sha="c" * 40,
+                        artifact_sha256="a" * 64, postgres_image=f"postgres@sha256:{'d' * 64}",
+                        redis_image=f"redis@sha256:{'e' * 64}", migration_policy="rollback-compatible",
+                    )
+
+    def test_two_bundles_can_use_one_installer_source_tag(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            for release in ("2026.10.01", "2026.10.02"):
+                output = Path(temp_dir) / f"{release}.json"
+                create_release_manifest(
+                    output_path=output,
+                    release=release,
+                    installer_repository="OWNER/installer",
+                    installer_tag="installer-v2026.10.01",
+                    bundle_tag=f"bundle-v{release}",
+                    bot_repository="https://github.com/OWNER/bot.git",
+                    bot_sha="b" * 40,
+                    cabinet_repository="https://github.com/OWNER/custom-cabinet.git",
+                    cabinet_sha="c" * 40,
+                    artifact_sha256="a" * 64,
+                    postgres_image=f"postgres@sha256:{'d' * 64}",
+                    redis_image=f"redis@sha256:{'e' * 64}",
+                    migration_policy="rollback-compatible",
+                )
+                bundle = load_release_bundle(output, 1)
+                self.assertEqual(
+                    bundle.cabinet.artifact_url,
+                    f"https://github.com/OWNER/installer/releases/download/bundle-v{release}/cabinet-dist.tar.gz",
+                )
+
     def test_publication_cli_runs_outside_repository_root(self) -> None:
         script = (
             Path(__file__).resolve().parents[1]

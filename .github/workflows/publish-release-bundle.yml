@@ -4,11 +4,19 @@ on:
   workflow_dispatch:
     inputs:
       release:
-        description: Public release name, for example 2026.08.0
+        description: Bundle version, for example 2026.10.01.1
         required: true
         type: string
       installer_tag:
-        description: Existing immutable installer tag, for example v2026.08.0
+        description: Existing Installer source tag, for example installer-v2026.10.01
+        required: true
+        type: string
+      installer_sha:
+        description: Exact Installer source commit (40 lowercase hex)
+        required: true
+        type: string
+      bundle_tag:
+        description: Existing Bundle tag on the same commit, for example bundle-v2026.10.01.1
         required: true
         type: string
       bot_ref:
@@ -41,12 +49,12 @@ on:
         description: Nginx runtime image pinned by sha256 digest
         required: true
         type: string
-      lifecycle_proof:
-        description: Exact confirmation that disposable Ubuntu 24.04 lifecycle passed
+      lifecycle_evidence_sha:
+        description: Exact reviewed evidence commit on the default branch
         required: true
         type: string
-      lifecycle_sha:
-        description: Exact Installer commit tested by the disposable lifecycle
+      lifecycle_evidence_path:
+        description: Public lifecycle JSON under releases/evidence/ in that commit
         required: true
         type: string
 
@@ -54,7 +62,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: release-bundle-${{ inputs.installer_tag }}
+  group: publication-${{ inputs.bundle_tag }}
   cancel-in-progress: false
 
 jobs:
@@ -64,6 +72,11 @@ jobs:
     env:
       RELEASE_NAME: ${{ inputs.release }}
       INSTALLER_TAG: ${{ inputs.installer_tag }}
+      INSTALLER_SHA: ${{ inputs.installer_sha }}
+      BUNDLE_TAG: ${{ inputs.bundle_tag }}
+      WORKFLOW_SHA: ${{ github.workflow_sha }}
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      PYTHONDONTWRITEBYTECODE: '1'
       BOT_REPOSITORY: https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git
       BOT_REF: ${{ inputs.bot_ref }}
       CABINET_REPOSITORY: ${{ inputs.cabinet_repository }}
@@ -72,7 +85,8 @@ jobs:
       REDIS_IMAGE: ${{ inputs.redis_image }}
       NODE_BUILDER_IMAGE: ${{ inputs.node_builder_image }}
       NGINX_RUNTIME_IMAGE: ${{ inputs.nginx_runtime_image }}
-      LIFECYCLE_SHA: ${{ inputs.lifecycle_sha }}
+      LIFECYCLE_EVIDENCE_SHA: ${{ inputs.lifecycle_evidence_sha }}
+      LIFECYCLE_EVIDENCE_PATH: ${{ inputs.lifecycle_evidence_path }}
     steps:
       - name: Checkout exact installer tag
         uses: actions/checkout@v4
@@ -80,16 +94,16 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.installer_tag }}
 
-      - name: Verify installer tag identity
+      - name: Verify exact source and reserve a new Bundle identity
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -Eeuo pipefail
-          [[ "${RELEASE_NAME}" =~ ^[A-Za-z0-9._-]+$ ]]
-          [[ "${INSTALLER_TAG}" =~ ^[A-Za-z0-9._-]+$ ]]
-          [[ "${LIFECYCLE_SHA}" =~ ^[0-9a-f]{40}$ ]]
-          test "${{ inputs.lifecycle_proof }}" = "ubuntu-24.04-passed"
+          python3 scripts/publication_control.py source \
+            --source "${RUNNER_TEMP}/installer-source.json" \
+            --archive "${RUNNER_TEMP}/installer-source.tar.gz"
+          python3 scripts/publication_control.py check-release
           python3 - <<'PY'
           import os
           from urllib.parse import urlsplit
@@ -115,44 +129,16 @@ jobs:
           ):
               raise SystemExit("Cabinet repository must be a public GitHub HTTPS URL without credentials")
           PY
-          test "${LIFECYCLE_SHA}" = "$(git rev-parse HEAD)"
-          test "$(git rev-parse HEAD)" = "$(git rev-parse "refs/tags/${INSTALLER_TAG}^{commit}")"
-          if gh release view "${INSTALLER_TAG}" >/dev/null 2>&1; then
-            is_draft="$(gh release view "${INSTALLER_TAG}" --json isDraft --jq .isDraft)"
-            if [[ "${is_draft}" == true ]]; then
-              gh release delete "${INSTALLER_TAG}" --yes
-            else
-              printf 'Published release already exists for tag %s\n' "${INSTALLER_TAG}" >&2
-              exit 1
-            fi
-          fi
 
       - name: Run release contract tests
         shell: bash
         run: |
           set -Eeuo pipefail
-          python3 -m unittest discover -s tests
-          bash tests/integration/package-manager-lock.sh
-          sudo -E bash tests/integration/recovery-runtime-adapter.sh
-          bash tests/integration/firewall.sh
-          bash tests/integration/caddy-regeneration-failure.sh
-          bash tests/integration/deploy-safe-stop.sh
-          bash tests/integration/full-install-transaction.sh
-          bash tests/integration/fresh-install-release-bundle.sh
-          bash tests/integration/fresh-install-project-root.sh
-          bash tests/integration/first-install-pending-state.sh
-          bash tests/integration/first-install-runtime-change.sh
-          bash tests/integration/migration-discard-identity.sh
-          bash tests/integration/migration-export-cleanup.sh
-          bash tests/integration/completed-migration-runtime-identity.sh
-          bash tests/integration/settings-runtime-change.sh
-          bash tests/integration/release-bundle-shell.sh
-          bash tests/integration/postgres-dump-verification.sh
-          bash tests/integration/protected-update-adapter.sh
-          bash tests/integration/protected-update-recovery.sh
-          bash tests/integration/runtime-isolation.sh
-          bash tests/integration/management-launcher.sh
-          bash tests/integration/production-readiness.sh
+          bash scripts/run-release-contract-tests.sh
+
+      - name: Verify runtime digests on linux/amd64
+        shell: bash
+        run: python3 scripts/publication_control.py images
 
       - name: Resolve immutable source revisions
         id: revisions
@@ -210,6 +196,7 @@ jobs:
             --release "${RELEASE_NAME}" \
             --installer-repository "${INSTALLER_REPOSITORY}" \
             --installer-tag "${INSTALLER_TAG}" \
+            --bundle-tag "${BUNDLE_TAG}" \
             --bot-repository "${BOT_REPOSITORY}" \
             --bot-sha "${BOT_SHA}" \
             --cabinet-repository "${CABINET_REPOSITORY}" \
@@ -222,12 +209,20 @@ jobs:
           python3 lib/release_bundle.py verify-cabinet \
             release-assets/cabinet-dist.tar.gz "${artifact_sha256}"
 
-      - name: Package installer tag
+      - name: Verify reviewed lifecycle evidence
         shell: bash
         run: |
           set -Eeuo pipefail
-          git archive --format=tar "${INSTALLER_TAG}" \
-            | gzip -n > "release-assets/installer-${RELEASE_NAME}.tar.gz"
+          git fetch --no-tags origin "refs/heads/${DEFAULT_BRANCH}:refs/remotes/origin/${DEFAULT_BRANCH}"
+          python3 scripts/publication_control.py evidence \
+            --source "${RUNNER_TEMP}/installer-source.json" \
+            --manifest release-assets/release.json
+
+      - name: Package verified Installer source
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cp "${RUNNER_TEMP}/installer-source.tar.gz" "release-assets/installer-${RELEASE_NAME}.tar.gz"
           (cd release-assets && \
             sha256sum "installer-${RELEASE_NAME}.tar.gz" \
               > "installer-${RELEASE_NAME}.tar.gz.sha256")
@@ -238,13 +233,13 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          gh release create "${INSTALLER_TAG}" \
-            --draft \
-            --verify-tag \
-            --title "Installer ${RELEASE_NAME}" \
-            --notes "Immutable Release Bundle ${RELEASE_NAME}"
-          touch .workflow-created-release
-          gh release upload "${INSTALLER_TAG}" release-assets/* --clobber
+          printf 'Release Bundle %s candidate. Installer %s (%s). Lifecycle evidence: %s at %s. Stable promotion is a separate gate.\n' \
+            "${RELEASE_NAME}" "${INSTALLER_TAG}" "${INSTALLER_SHA}" \
+            "${LIFECYCLE_EVIDENCE_PATH}" "${LIFECYCLE_EVIDENCE_SHA}" > "${RUNNER_TEMP}/release-notes.txt"
+          python3 scripts/publication_control.py create-draft \
+            --receipt "${RUNNER_TEMP}/publication-receipt.json" --notes "${RUNNER_TEMP}/release-notes.txt"
+          python3 scripts/publication_control.py upload-assets \
+            --receipt "${RUNNER_TEMP}/publication-receipt.json" --assets release-assets
 
       - name: Download and verify published draft assets
         env:
@@ -253,8 +248,10 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          mkdir -p downloaded-assets
-          gh release download "${INSTALLER_TAG}" --dir downloaded-assets
+          python3 scripts/publication_control.py download-assets \
+            --receipt "${RUNNER_TEMP}/publication-receipt.json" --assets downloaded-assets
+          python3 scripts/release_bundle_publication.py verify-download \
+            --expected release-assets --downloaded downloaded-assets --release "${RELEASE_NAME}"
           diff release-assets/release.json downloaded-assets/release.json
           diff release-assets/release-provenance.json downloaded-assets/release-provenance.json
           jq -e \
@@ -273,14 +270,14 @@ jobs:
           (cd downloaded-assets && \
             sha256sum --check "installer-${RELEASE_NAME}.tar.gz.sha256")
 
-      - name: Publish verified release
+      - name: Publish verified Bundle candidate (never latest)
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -Eeuo pipefail
-          gh release edit "${INSTALLER_TAG}" --draft=false
-          rm -f .workflow-created-release
+          python3 scripts/publication_control.py publish-draft \
+            --receipt "${RUNNER_TEMP}/publication-receipt.json"
 
       - name: Remove failed workflow draft
         if: ${{ failure() }}
@@ -289,9 +286,5 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          if [[ -f .workflow-created-release ]]; then
-            is_draft="$(gh release view "${INSTALLER_TAG}" --json isDraft --jq .isDraft 2>/dev/null || true)"
-            if [[ "${is_draft}" == true ]]; then
-              gh release delete "${INSTALLER_TAG}" --yes
-            fi
-          fi
+          python3 scripts/publication_control.py cleanup-draft \
+            --receipt "${RUNNER_TEMP}/publication-receipt.json"

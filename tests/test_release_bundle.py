@@ -298,6 +298,21 @@ class ReleaseBundleTests(unittest.TestCase):
             self.assertIsNone(bundle.cabinet.repository)
             self.assertEqual(release_bundle_identity(bundle), expected_identity)
 
+    def test_legacy_schema_identity_hashes_remain_fixed(self) -> None:
+        expected = {
+            1: "1f25cbe4c5f2614e648269b157357d376d9b73a34f2bf3787655a8c55b0be346",
+            2: "109b4d2c094a0840ba579795eeb11c4236ff9b020a8a6a9eed72b7c0f3893880",
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "release.json"
+            for version, identity in expected.items():
+                manifest = valid_manifest()
+                manifest["schema_version"] = version
+                if version == 1:
+                    del manifest["cabinet"]["repository"]
+                path.write_text(json.dumps(manifest), encoding="utf-8")
+                self.assertEqual(release_bundle_identity(load_release_bundle(path, 1)), identity)
+
     def test_repository_contract_requires_schema_version_two(self) -> None:
         invalid_manifests = []
         version_one_with_repository = valid_manifest()
