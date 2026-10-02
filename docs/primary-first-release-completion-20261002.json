@@ -1,0 +1,225 @@
+{
+  "status": "PASS_ALL_THREE_STABLE",
+  "at_utc": "2026-10-02T18:06:07.243760+00:00",
+  "releases": {
+    "installer": {
+      "repository": "alexforworkgpt-source/installer",
+      "tag": "installer-v2026.10.02",
+      "release_id": 401931127,
+      "url": "https://github.com/alexforworkgpt-source/installer/releases/tag/installer-v2026.10.02",
+      "immutable": true,
+      "source_sha": "75c49bec9c2a764e123fc0ef675f8c45fc22a1ab",
+      "publication_run_id": 37026248262,
+      "publication_run_attempt": 1,
+      "assets": {
+        "installer-v2026.10.02.tar.gz": {
+          "sha256": "eff17b515f9714dcefee88652d884e64598300941f3b9519d77bcf9e2e75752d",
+          "size": 227111,
+          "asset_id": 605882669,
+          "url": "https://github.com/alexforworkgpt-source/installer/releases/download/installer-v2026.10.02/installer-v2026.10.02.tar.gz"
+        },
+        "installer-v2026.10.02.tar.gz.sha256": {
+          "sha256": "c04592ae43cdd377857a04e0d590e1fa67dfa475b1ed5a3d9e0b36dadead016f",
+          "size": 95,
+          "asset_id": 605882704,
+          "url": "https://github.com/alexforworkgpt-source/installer/releases/download/installer-v2026.10.02/installer-v2026.10.02.tar.gz.sha256"
+        }
+      },
+      "prerelease": false,
+      "stable": true,
+      "published_at": "2026-10-02T15:21:53Z"
+    },
+    "cabinet": {
+      "repository": "alexforworkgpt-source/custom-cabinet",
+      "tag": "cabinet-v2026.10.02.1",
+      "release_id": 401932788,
+      "url": "https://github.com/alexforworkgpt-source/custom-cabinet/releases/tag/cabinet-v2026.10.02.1",
+      "immutable": true,
+      "source_sha": "8fb8cbec19d651fcfaee3bce32621031b3e69965",
+      "publication_run_id": 37026262757,
+      "publication_run_attempt": 1,
+      "assets": {
+        "cabinet-release.json": {
+          "sha256": "4c8250b013343b4d53f48052ea518e19fbc43f65fbe23a74aea7700c793dadcb",
+          "size": 2876,
+          "asset_id": 605887329,
+          "url": "https://github.com/alexforworkgpt-source/custom-cabinet/releases/download/cabinet-v2026.10.02.1/cabinet-release.json"
+        },
+        "cabinet-release.json.sha256": {
+          "sha256": "405bda87792f5da15ac42fab5895b15aaa3522a969dc0490a88f8da5801cb06a",
+          "size": 87,
+          "asset_id": 605887364,
+          "url": "https://github.com/alexforworkgpt-source/custom-cabinet/releases/download/cabinet-v2026.10.02.1/cabinet-release.json.sha256"
+        }
+      },
+      "prerelease": false,
+      "stable": true,
+      "published_at": "2026-10-02T15:24:03Z"
+    },
+    "bundle": {
+      "repository": "alexforworkgpt-source/installer",
+      "tag": "bundle-v2026.10.02.1",
+      "release_id": 401931755,
+      "url": "https://github.com/alexforworkgpt-source/installer/releases/tag/bundle-v2026.10.02.1",
+      "immutable": true,
+      "source_sha": "75c49bec9c2a764e123fc0ef675f8c45fc22a1ab",
+      "publication_run_id": 37026278986,
+      "publication_run_attempt": 1,
+      "assets": {
+        "cabinet-dist.tar.gz": {
+          "sha256": "a068888441ab8cc996a45c9f60fc2f4c750d23efa389041b255c6138f2d3ff7e",
+          "size": 15581583,
+          "asset_id": 605884273,
+          "url": "https://github.com/alexforworkgpt-source/installer/releases/download/bundle-v2026.10.02.1/cabinet-dist.tar.gz"
+        },
+        "cabinet-dist.tar.gz.sha256": {
+          "sha256": "cefc5eea66c535d17c77fca46c82a6c21ce9b8332258ac1744d214151de0ebaf",
+          "size": 86,
+          "asset_id": 605884323,
+          "url": "https://github.com/alexforworkgpt-source/installer/releases/download/bundle-v2026.10.02.1/cabinet-dist.tar.gz.sha256"
+        },
+        "installer-2026.10.02.1.tar.gz": {
+          "sha256": "eff17b515f9714dcefee88652d884e64598300941f3b9519d77bcf9e2e75752d",
+          "size": 227111,
+          "asset_id": 605884332,
+          "url": "https://github.com/alexforworkgpt-source/installer/releases/download/bundle-v2026.10.02.1/installer-2026.10.02.1.tar.gz"
+        },
+        "installer-2026.10.02.1.tar.gz.sha256": {
+          "sha256": "f6a483c9492ebce5779542dcb1590ec289a2369b6977ca27dd34cf0ed06c95b4",
+          "size": 96,
+          "asset_id": 605884351,
+          "url": "https://github.com/alexforworkgpt-source/installer/releases/download/bundle-v2026.10.02.1/installer-2026.10.02.1.tar.gz.sha256"
+        },
+        "release-provenance.json": {
+          "sha256": "8bde7029d02c492fff679456f54da5a75ded2fe71879e35196d4b326d68a8d65",
+          "size": 361,
+          "asset_id": 605884365,
+          "url": "https://github.com/alexforworkgpt-source/installer/releases/download/bundle-v2026.10.02.1/release-provenance.json"
+        },
+        "release.json": {
+          "sha256": "9f604aca9276d52923a86171b1ffb80eb3aa22f2b56b8ddfea4469fd3e24ca6f",
+          "size": 971,
+          "asset_id": 605884387,
+          "url": "https://github.com/alexforworkgpt-source/installer/releases/download/bundle-v2026.10.02.1/release.json"
+        }
+      },
+      "bundle_identity": "c6c048cce8ad679706c48f35922e98ee36c0cc1923ab801f9f682bb80d607911",
+      "bot_sha": "877690a7039d1326b2c00eda3e297879b80c0678",
+      "cabinet_sha": "8fb8cbec19d651fcfaee3bce32621031b3e69965",
+      "cabinet_artifact_sha256": "a068888441ab8cc996a45c9f60fc2f4c750d23efa389041b255c6138f2d3ff7e",
+      "prerelease": false,
+      "stable": true,
+      "published_at": "2026-10-02T15:22:44Z"
+    }
+  },
+  "promotion": {
+    "run_id": 37044289678,
+    "url": "https://github.com/alexforworkgpt-source/installer/actions/runs/37044289678",
+    "conclusion": "success"
+  },
+  "latest": {
+    "alexforworkgpt-source/installer": "v2026.10.01",
+    "alexforworkgpt-source/custom-cabinet": "cabinet-v2026.09.05.1"
+  },
+  "historical_releases_tags_assets_unchanged": true,
+  "github_settings_unchanged": true,
+  "owner_worktrees_preserved_before_completion_docs": true,
+  "make_latest": false,
+  "adr": "0001",
+  "implementation": "Complete",
+  "smoke": {
+    "status": "PASS",
+    "at_utc": "2026-10-02T15:32:51.528134+00:00",
+    "bundle_tag": "bundle-v2026.10.02.1",
+    "bundle_identity": "c6c048cce8ad679706c48f35922e98ee36c0cc1923ab801f9f682bb80d607911",
+    "summary": {
+      "disposable_confirmation": "yes; target=designated-integration-vps; production_not_accessed=true",
+      "management_runtime_files_verified": "38",
+      "outcome": "committed",
+      "release": "2026.10.02.1",
+      "bundle_identity": "c6c048cce8ad679706c48f35922e98ee36c0cc1923ab801f9f682bb80d607911",
+      "bot_sha": "877690a7039d1326b2c00eda3e297879b80c0678",
+      "cabinet_sha": "8fb8cbec19d651fcfaee3bce32621031b3e69965",
+      "cabinet_artifact_sha256": "a068888441ab8cc996a45c9f60fc2f4c750d23efa389041b255c6138f2d3ff7e",
+      "containers": "3",
+      "cabinet_http": "200",
+      "instruction_http": "200",
+      "branding_http": "200",
+      "health_status": "ok",
+      "webhook_default_http": "404",
+      "cache_control": "no-store",
+      "test_environment": "absent",
+      "cleanup_postflight": "PASS"
+    },
+    "local_server_env_preserved": true,
+    "full_lifecycle_repeated": false,
+    "scope": "Actual targeted technical fresh installation and cleanup; no live payment/Telegram user scenarios"
+  },
+  "cabinet_source_gates": {
+    "workflow_run_id": 37026262757,
+    "workflow_url": "https://github.com/alexforworkgpt-source/custom-cabinet/actions/runs/37026262757",
+    "log_sha256": "965038dbb24b48a5b65be6b821bd5940f8ec7441aa60e736877c9322883c0d71",
+    "frontend_tests_per_node": 991,
+    "publication_tests_per_node": 15,
+    "node_versions": [
+      24,
+      26
+    ],
+    "lint_typecheck_build_codeql": "SUCCESS",
+    "scope": "Exact release source gates; mocks retain their stated limits"
+  },
+  "lifecycle": {
+    "result": "PASS_EXACT_REUSE",
+    "source_sha": "75c49bec9c2a764e123fc0ef675f8c45fc22a1ab",
+    "evidence_sha": "37289e3cd3b135f4b5a31f2b7a0291ccaede081c",
+    "path": "releases/evidence/primary-lifecycle-reused-75c49be-20261002.json",
+    "full_lifecycle_repeated": false
+  },
+  "evidence": {
+    "log_commit": "90653f62c91e424f84da77fad5eda15864064162",
+    "record_commit": "4740f95e7878759f34f1519291c892c2655126b1",
+    "log_path": "releases/evidence/primary-bundle-2026.10.02.1-checks.log",
+    "record_path": "releases/evidence/primary-bundle-2026.10.02.1-promotion.json",
+    "log_sha256": "1700ac979468e05a492a0084a8c4b72a16a69b56161581530f5bbdb8c32844e8"
+  },
+  "evidence_pr": "https://github.com/alexforworkgpt-source/installer/pull/3",
+  "evidence_merge_sha": "54f5655c717094ccdc8d8057935e545825ead21c",
+  "compatibility_scope": "Owner-accepted PASS_SOURCE_CONTRACT_SCOPE; no full live PASS",
+  "limitations": [
+    {
+      "id": "classic-auto-purchase",
+      "status": "OPEN",
+      "summary": "Backend subscription_purchase top-up dispatch remains unsupported; real server-side renewal is not proved.",
+      "accepted": true
+    },
+    {
+      "id": "unused-legacy-email-wrapper",
+      "status": "OPEN",
+      "summary": "createEmail declares POST /cabinet/admin/broadcasts/email, absent from exact Bot schema. Static search finds only its declaration; current form uses supported createCombined -> /send. Wrapper unchanged from published source.",
+      "accepted": true
+    },
+    {
+      "id": "exact-compatibility-evidence",
+      "status": "BLOCKED",
+      "summary": "Owner accepted limited source-contract evidence for exact Cabinet/Bot: 145 Bot tests, 578/579 method/path matches and 11 mocked browser scenarios. Full response-field parity and actual authenticated staging remain unverified; no complete runtime compatibility PASS is claimed.",
+      "accepted": true
+    },
+    {
+      "id": "new-bundle-smoke",
+      "status": "BLOCKED",
+      "summary": "A new Release Bundle has not been built/published/installed or smoke-tested.",
+      "accepted": true
+    },
+    {
+      "id": "physical-platform-and-payment",
+      "status": "BLOCKED",
+      "summary": "Real Telegram Android/iOS, physical accessibility, payment, renewal, concurrency and panel flows remain outside existing proof.",
+      "accepted": true
+    }
+  ],
+  "transition": "NOT_REQUIRED unchanged protected tuple vs v2026.10.01",
+  "production_changed": false,
+  "backend_changed": false,
+  "runtime_source_changed": false,
+  "historical_smoke_limit_note": "Cabinet publication snapshot new-bundle-smoke BLOCKED predates actual Bundle smoke. Immutable snapshot retained; actual Bundle smoke gate PASS above."
+}
