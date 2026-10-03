@@ -1,0 +1,100 @@
+Custom Cabinet design Bundle gate — 2026-10-03
+Scope: public integrity + exact frontend source + targeted disposable fresh installation.
+Production not accessed or updated. Latest preserved. No backend/site source changes.
+Previous stable Bundle: bundle-v2026.10.02.1 / c6c048cce8ad679706c48f35922e98ee36c0cc1923ab801f9f682bb80d607911
+Previous manifest SHA256: 9f604aca9276d52923a86171b1ffb80eb3aa22f2b56b8ddfea4469fd3e24ca6f
+Cabinet tag/source/tree: cabinet-v2026.10.03.1 / 3b6255597f5ad5270136dd1f683fed980b925a66 / 8422dc4a2ab015b6025200a3f8c417fa912c38de
+Installer tag/source: installer-v2026.10.02 / 75c49bec9c2a764e123fc0ef675f8c45fc22a1ab
+Cabinet publication/source gate: https://github.com/alexforworkgpt-source/custom-cabinet/actions/runs/37127280022
+Exact-source Linux Node 24/26: 1006 frontend tests + 15 publication guards each; lint/format/type-check/build and CodeQL PASS.
+Bundle publication: https://github.com/alexforworkgpt-source/installer/actions/runs/37127320634
+141 release contract tests PASS; pinned linux/amd64 images and deterministic repeated artifact build PASS.
+Bounded compatibility: https://github.com/alexforworkgpt-source/custom-cabinet/blob/77f0d15493b70426fe791cf307f48f3d859246b0/releases/evidence/compatibility-design-3b62555-877690a7-20261003.md
+117 mocked browser scenarios PASS on source and again on independently downloaded public Cabinet artifact; six public-artifact trial checks PASS.
+Broader original browser suite: 72 PASS, two configured skips, three stale assertions FAIL; same three FAIL on exact previous stable source.
+Temporary current-expectation checks: four PASS, only decimal CTA/discount labels and selected light border expectations adapted; financial/payload/step/double-submit assertions preserved.
+Review fixes: discount/title overlap (two failing-before cases) and active tariff expired hint (two failing-before cases); regression and repeated browser gates PASS.
+Independent tokenless public downloads: asset sets, API sizes/digests, checksum bytes, manifest/provenance, source/tree/license/record/run bindings and safe archives PASS.
+RSA serialization marker in vendor-crypto is byte-identical to stable public module; no PEM private-key material. Other secret shapes absent.
+Lifecycle reused: exact unchanged Installer SHA/tree/archive, Bot, postgres/redis digests, contracts, schemas, migration policy and Ubuntu 24.04/linux/amd64.
+Lifecycle: https://github.com/alexforworkgpt-source/installer/blob/37289e3cd3b135f4b5a31f2b7a0291ccaede081c/releases/evidence/primary-lifecycle-reused-75c49be-20261002.json
+Protected previous-to-candidate transition: NOT_REQUIRED (all protected fields unchanged). Targeted installation of this new Bundle remains mandatory and passed.
+management_runtime_files_verified=38
+outcome=committed
+release=2026.10.03.1
+bundle_identity=b9250c20a6e45b3dd08342e378164e2c9f6b6ee89bbd214a4d226bac86e4494e
+bot_sha=877690a7039d1326b2c00eda3e297879b80c0678
+cabinet_sha=3b6255597f5ad5270136dd1f683fed980b925a66
+cabinet_artifact_sha256=e8a1569f8c23de862b87efc726f14a8247c26327f8bcf2ae4160979845b80a20
+containers=3
+cabinet_http=200
+instruction_http=200
+branding_http=200
+health_status=ok
+webhook_default_http=404
+cache_control=no-store
+targeted_fresh_smoke=PASS
+local_server_env_unchanged=true
+postflight_cleanup=PASS (test project, containers/volumes, proxy snippet and temporary env removed; management Installer preserved)
+original_owner_files_and_heads_unchanged=true
+Owner authorization: current package preparation/publication/test installation/stable promotion; no production or latest authorization.
+Accepted historical limits retained: Classic auto-purchase OPEN; unused legacy email wrapper OPEN; full response-field/authenticated staging and physical Telegram/accessibility/real payment/renewal/concurrency/panel BLOCKED. No full runtime compatibility claim.
+Bundle public asset receipts:
+{
+  "result": "PASS",
+  "tag": "bundle-v2026.10.03.1",
+  "release_id": 402532555,
+  "immutable": true,
+  "prerelease": true,
+  "public_assets_verified": true,
+  "unauthenticated_download": true,
+  "assets": {
+    "cabinet-dist.tar.gz": "e8a1569f8c23de862b87efc726f14a8247c26327f8bcf2ae4160979845b80a20",
+    "cabinet-dist.tar.gz.sha256": "e16eb4305d44c40d6c8524c9cc8af50e64f678b79a9bbc35b7821a97151a1036",
+    "installer-2026.10.03.1.tar.gz": "eff17b515f9714dcefee88652d884e64598300941f3b9519d77bcf9e2e75752d",
+    "installer-2026.10.03.1.tar.gz.sha256": "6a9d2f95d832d82dda008195f8fc1b43009131e03d56a5bb2ece5a65c9d47a22",
+    "release-provenance.json": "031e0a33bf461323589c0697b8f58bb3409e37c282cd95af662bbdeaf188221e",
+    "release.json": "f014b4c27de32fa3eb51daacf5356a16170875016b2acca0a4d7fa492ce089f9"
+  },
+  "release": "2026.10.03.1",
+  "installer_sha": "75c49bec9c2a764e123fc0ef675f8c45fc22a1ab",
+  "cabinet_sha": "3b6255597f5ad5270136dd1f683fed980b925a66",
+  "bot_sha": "877690a7039d1326b2c00eda3e297879b80c0678",
+  "bundle_identity": "b9250c20a6e45b3dd08342e378164e2c9f6b6ee89bbd214a4d226bac86e4494e",
+  "cabinet_artifact_sha256": "e8a1569f8c23de862b87efc726f14a8247c26327f8bcf2ae4160979845b80a20",
+  "protected": {
+    "bot_repository": "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",
+    "bot_sha": "877690a7039d1326b2c00eda3e297879b80c0678",
+    "postgres_image": "postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23",
+    "redis_image": "redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2",
+    "backend_contract": "1",
+    "bot_backend_contract": "1",
+    "cabinet_backend_contract": "1",
+    "configuration_schema": 1,
+    "manifest_schema": 2,
+    "migration_policy": "rollback-compatible",
+    "target_os": "ubuntu-24.04",
+    "target_platform": "linux/amd64"
+  },
+  "marker_reviews": [
+    {
+      "path": "assets/vendor-crypto-C22YYRe_.js",
+      "sha256": "b7e62a36521c872d049f4e015458780e0a8e7bd4e7d71b33801717ad3b8cd807",
+      "reason": "RSA serialization marker only; byte-identical public stable vendor module, no embedded PEM key material"
+    }
+  ]
+}
+Cabinet public asset receipts:
+{
+  "result": "PASS",
+  "tag": "cabinet-v2026.10.03.1",
+  "release_id": 402533176,
+  "immutable": true,
+  "prerelease": true,
+  "public_assets_verified": true,
+  "unauthenticated_download": true,
+  "assets": {
+    "cabinet-release.json": "8e58cf76a675cf4263b603fa0ff1fd31f7bc2dc129fe998f3a033956c64928a7",
+    "cabinet-release.json.sha256": "1df3034fb05a901bdb94f44703af22f97ea15c12d9c691541afbcde42a138032"
+  }
+}
