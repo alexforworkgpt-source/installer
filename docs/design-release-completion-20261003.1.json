@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "result": "PASS_PACKAGE_WITH_ACCEPTED_LIMITS",
+  "release": "2026.10.03.1",
+  "cabinet_tag": "cabinet-v2026.10.03.1",
+  "cabinet_sha": "3b6255597f5ad5270136dd1f683fed980b925a66",
+  "cabinet_tree": "8422dc4a2ab015b6025200a3f8c417fa912c38de",
+  "cabinet_record_commit": "a172a16672324a41ff74c169b005fecad52bfa68",
+  "compatibility_commit": "77f0d15493b70426fe791cf307f48f3d859246b0",
+  "compatibility_path": "releases/evidence/compatibility-design-3b62555-877690a7-20261003.md",
+  "installer_tag": "installer-v2026.10.02",
+  "installer_sha": "75c49bec9c2a764e123fc0ef675f8c45fc22a1ab",
+  "bundle_tag": "bundle-v2026.10.03.1",
+  "lifecycle_commit": "37289e3cd3b135f4b5a31f2b7a0291ccaede081c",
+  "lifecycle_path": "releases/evidence/primary-lifecycle-reused-75c49be-20261002.json",
+  "cabinet_publication_run": 37127280022,
+  "bundle_publication_run": 37127320634,
+  "bundle_identity": "b9250c20a6e45b3dd08342e378164e2c9f6b6ee89bbd214a4d226bac86e4494e",
+  "cabinet_artifact_sha256": "e8a1569f8c23de862b87efc726f14a8247c26327f8bcf2ae4160979845b80a20",
+  "bundle_release_id": 402532555,
+  "cabinet_release_id": 402533176,
+  "promotion_log_path": "releases/evidence/design-bundle-2026.10.03.1-checks.log",
+  "promotion_log_sha256": "f86c95f1a22b1fe90cd2fbb0890e7ea5f24cf108808aecbe998eb3e29eb24d5f",
+  "promotion_log_commit": "32c887eede5767e662163651aaa5bbcfc7f086d8",
+  "promotion_record_path": "releases/evidence/design-bundle-2026.10.03.1-promotion.json",
+  "promotion_record_commit": "c11b729f6b2c70153024aee7e661c89f38eae38c",
+  "bundle_promotion_run": 37128446943,
+  "stable": true,
+  "public_assets": {
+    "cabinet-dist.tar.gz": "e8a1569f8c23de862b87efc726f14a8247c26327f8bcf2ae4160979845b80a20",
+    "cabinet-dist.tar.gz.sha256": "e16eb4305d44c40d6c8524c9cc8af50e64f678b79a9bbc35b7821a97151a1036",
+    "installer-2026.10.03.1.tar.gz": "eff17b515f9714dcefee88652d884e64598300941f3b9519d77bcf9e2e75752d",
+    "installer-2026.10.03.1.tar.gz.sha256": "6a9d2f95d832d82dda008195f8fc1b43009131e03d56a5bb2ece5a65c9d47a22",
+    "release-provenance.json": "031e0a33bf461323589c0697b8f58bb3409e37c282cd95af662bbdeaf188221e",
+    "release.json": "f014b4c27de32fa3eb51daacf5356a16170875016b2acca0a4d7fa492ce089f9"
+  },
+  "history": {
+    "installer": {
+      "existing_releases_preserved": 43,
+      "local_tag_refs_verified": 45,
+      "latest_preserved": "v2026.10.01"
+    },
+    "cabinet": {
+      "existing_releases_preserved": 18,
+      "local_tag_refs_verified": 19,
+      "latest_preserved": "cabinet-v2026.10.02.1"
+    }
+  },
+  "source_gate": "PASS",
+  "public_byte_gate": "PASS",
+  "disposable_smoke": "PASS",
+  "public_artifact_browser_cases": 117,
+  "public_artifact_trial_cases": 6,
+  "codeql_open_alerts_before": 32,
+  "codeql_open_alerts_after": 32,
+  "new_codeql_alerts": [],
+  "installer_lifecycle": "REUSED_EXACT_PROTECTED_TUPLE",
+  "backend_site_unchanged": true,
+  "production": "NOT_STARTED",
+  "latest_changed": false,
+  "owner_original_files_and_heads_preserved": true,
+  "production_readiness": "PACKAGE_READY_WITH_ACCEPTED_LIMITS; separate authorization, fresh baseline and off-host backup required"
+}
