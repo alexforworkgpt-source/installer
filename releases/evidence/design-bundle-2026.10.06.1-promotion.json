@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "kind": "bundle-promotion",
+  "result": "PASS",
+  "owner_approved": true,
+  "repository": "alexforworkgpt-source/installer",
+  "bundle_tag": "bundle-v2026.10.06.1",
+  "release_id": 404735283,
+  "installer_tag": "installer-v2026.10.02",
+  "installer": {
+    "installer_sha": "75c49bec9c2a764e123fc0ef675f8c45fc22a1ab",
+    "installer_tree_sha": "6606a783904f81959441b846e757004530728908",
+    "archive_sha256": "eff17b515f9714dcefee88652d884e64598300941f3b9519d77bcf9e2e75752d"
+  },
+  "cabinet_tag": "cabinet-v2026.10.06.1",
+  "protected": {
+    "bot_repository": "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",
+    "bot_sha": "877690a7039d1326b2c00eda3e297879b80c0678",
+    "postgres_image": "postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23",
+    "redis_image": "redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2",
+    "backend_contract": "1",
+    "bot_backend_contract": "1",
+    "cabinet_backend_contract": "1",
+    "configuration_schema": 1,
+    "manifest_schema": 2,
+    "migration_policy": "rollback-compatible",
+    "target_os": "ubuntu-24.04",
+    "target_platform": "linux/amd64"
+  },
+  "bundle_identity": "faf409c1a898532fe0d63b58c29b1b21eb1480cdadecfefe296be0158a86a5c6",
+  "assets": {
+    "cabinet-dist.tar.gz": "98899dc701104a1369822e705040cd9e36f04c66551b05696c4078845ce02ef0",
+    "cabinet-dist.tar.gz.sha256": "d2973b7fc085fba28122d2b14d076f784cd759501eaaa161de4098c663ada128",
+    "installer-2026.10.06.1.tar.gz": "eff17b515f9714dcefee88652d884e64598300941f3b9519d77bcf9e2e75752d",
+    "installer-2026.10.06.1.tar.gz.sha256": "a0dc00f74049b6730cc63947f2a38d9e0ee3106e2040b74775802712f12c535d",
+    "release-provenance.json": "f720ba832a9323274a6776a3b324358ae47e9a6886837d7520c14f6d409022c4",
+    "release.json": "4c814c6937df0abbad994188d9fa03478d34850c88affb0b6dc4ed63a96de7e0"
+  },
+  "publication": {
+    "workflow_sha": "75c49bec9c2a764e123fc0ef675f8c45fc22a1ab",
+    "run_id": 37469762105,
+    "run_attempt": 1
+  },
+  "previous": {
+    "manifest_url": "https://github.com/alexforworkgpt-source/installer/releases/download/bundle-v2026.10.03.1/release.json",
+    "manifest_sha256": "f014b4c27de32fa3eb51daacf5356a16170875016b2acca0a4d7fa492ce089f9",
+    "bundle_identity": "b9250c20a6e45b3dd08342e378164e2c9f6b6ee89bbd214a4d226bac86e4494e"
+  },
+  "gates": {
+    "cabinet_source": {
+      "result": "PASS",
+      "evidence_url": "https://github.com/alexforworkgpt-source/custom-cabinet/actions/runs/37470224145"
+    },
+    "compatibility": {
+      "result": "PASS",
+      "evidence_url": "https://github.com/alexforworkgpt-source/custom-cabinet/blob/dc3c5ea9d73cad865743a9828d3b9f8609bf767d/releases/evidence/compatibility-design-9bafae4-877690a7-20261006.md"
+    },
+    "smoke": {
+      "result": "PASS",
+      "evidence_url": "https://github.com/alexforworkgpt-source/installer/blob/5373e97c4f843fca0f8230dcc83f052dbbe5b6ef/releases/evidence/design-bundle-2026.10.06.1-checks.log"
+    },
+    "transition": {
+      "result": "NOT_REQUIRED",
+      "evidence_url": "https://github.com/alexforworkgpt-source/installer/blob/5373e97c4f843fca0f8230dcc83f052dbbe5b6ef/releases/evidence/design-bundle-2026.10.06.1-checks.log"
+    }
+  },
+  "limitations": [
+    {
+      "id": "classic-auto-purchase",
+      "status": "OPEN",
+      "summary": "Existing unchanged Upstream Bot behavior requires manual confirmation after top-up; frontend does not close this limitation.",
+      "accepted": true
+    },
+    {
+      "id": "unused-legacy-email-wrapper",
+      "status": "OPEN",
+      "summary": "Existing unused createEmail wrapper declares an endpoint absent from the exact Bot schema; the current form uses the supported createCombined -> /send. The wrapper is unchanged.",
+      "accepted": true
+    },
+    {
+      "id": "exact-compatibility-evidence",
+      "status": "BLOCKED",
+      "summary": "Full response-field parity and authenticated staging remain unverified. Local unit and mocked browser checks do not establish full runtime compatibility.",
+      "accepted": true
+    },
+    {
+      "id": "physical-platform-and-payment",
+      "status": "BLOCKED",
+      "summary": "Physical Telegram Android/iOS, accessibility, payment/recovery/renewal/concurrency/panel/admin scenarios were not verified by local checks.",
+      "accepted": true
+    }
+  ],
+  "lifecycle": {
+    "commit": "37289e3cd3b135f4b5a31f2b7a0291ccaede081c",
+    "path": "releases/evidence/primary-lifecycle-reused-75c49be-20261002.json"
+  },
+  "make_latest": false,
+  "log_path": "releases/evidence/design-bundle-2026.10.06.1-checks.log",
+  "log_sha256": "3bac469877020a4276e250b742a1567f9ae490037ec29a6c9849b227144b6893"
+}
