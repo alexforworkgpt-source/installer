@@ -1,0 +1,111 @@
+Custom Cabinet / Release Bundle gate — 2026-10-10
+Scope: exact frontend source, public files and disposable Ubuntu 24.04 installation. Production not accessed or updated. Latest preserved; no backend code/API/migration or site modification.
+Reference: bundle-v2026.10.06.1 / Cabinet 9bafae4954dc1c2b0a1880f4ccfa59fb77c85ee3
+Cabinet: cabinet-v2026.10.10.1 / 1d046656fbb01a928fd54a28694e10105d4185f8 / tree c208d47d2c32b41276ae1c387a569c7628791553
+Installer: installer-v2026.10.02 / 75c49bec9c2a764e123fc0ef675f8c45fc22a1ab
+Cabinet publication: https://github.com/alexforworkgpt-source/custom-cabinet/actions/runs/38062311117
+Exact Linux Node 24/26: 1040 frontend tests/164 files and 15 publication guards each PASS; lint, full TypeScript/build and CodeQL PASS.
+Compiled artifact browser: 616 PASS, 14 configured viewport SKIP, zero FAIL/retries; 18 specs, widths 320/375/768/1024/1280. Two additional pixel cases PASS: left 35% has zero changed pixels, right side changes in both themes.
+Initial local Node 24.11.1 run had 3 loading-state timeouts, not PASS. Isolated 48 tests and full supported Node 24.19.0 run passed without modifying tests/source.
+CodeQL exact source branch: 30 existing open alert IDs and zero new IDs. Existing unresolved alerts are not declared fixed.
+Security Audit follows the existing non-blocking policy: 11 unchanged-lockfile findings (1 low, 2 moderate, 8 high); no dependency fix or reachability conclusion claimed.
+Bundle publication: https://github.com/alexforworkgpt-source/installer/actions/runs/38061549927
+Bundle workflow: 141 contract tests, pinned runtime identity checks, lifecycle/source binding, two Cabinet builds, exact upload/re-download and candidate publication PASS.
+First Actions compilation actually installed dependencies and compiled; second invocation used cache. Independent local --no-cache compilation used identical source/lockfile/platform/images/build args. All six public files equal the prepared local package.
+Public files downloaded without token: exact sets, sizes/digests/checksum contents, source/tag/tree/provenance, archive safety and vendor marker review PASS. The crypto serialization marker matches the prior stable module; no embedded PEM secret material.
+Bounded compatibility: https://github.com/alexforworkgpt-source/custom-cabinet/blob/c0349a23d31c5396bba38696d2f9f8c9bb272072/releases/evidence/compatibility-ui-1d046656-877690a7-20261010.md
+Lifecycle reused only for unchanged Installer SHA/tree/archive, Bot/images/contracts/schemas/Ubuntu 24.04/linux/amd64. Previous-to-candidate protected transition NOT_REQUIRED; protected tuple is unchanged.
+Lifecycle: https://github.com/alexforworkgpt-source/installer/blob/37289e3cd3b135f4b5a31f2b7a0291ccaede081c/releases/evidence/primary-lifecycle-reused-75c49be-20261002.json
+The owner reinstalled the disposable Ubuntu before this smoke. Its new local SSH fingerprint was recorded; other local server.env values were preserved. Fresh OS/root/disk/RAM preflight PASS. Exact management Installer runtime files matched the new public source archive.
+management_runtime_files_verified=38
+outcome=committed
+release=2026.10.10.1
+bundle_identity=bc2d203b48dfaeb8c18f9311202aa0b99e7617e5f4f0383f3409a45a74d8d019
+bot_sha=877690a7039d1326b2c00eda3e297879b80c0678
+cabinet_sha=1d046656fbb01a928fd54a28694e10105d4185f8
+cabinet_artifact_sha256=a3f119a4548d7f49067406e1a4e15f3020d1eeff1da00490130e1600ec40d0b0
+containers=3
+cabinet_http=200
+instruction_http=200
+branding_http=200
+health_status=ok
+webhook_default_http=404
+cache_control=no-store
+targeted_fresh_smoke=PASS
+cleanup_postflight=PASS
+local_server_env_unchanged=true
+The new public Bundle was freshly installed once. Ordinary test cleanup and postflight PASS: test containers/volumes/root/Caddy snippet/private temporary env removed; management Installer retained.
+The initial helper postflight failed solely because it expected a historical full-lifecycle marker log removed by the owner OS reinstall. Its failure is retained privately, not relabeled PASS. The standard cleanup-only postflight then passed, and all 38 management runtime files/launcher plus temporary private-env removal were checked independently against the public Installer archive. No synthetic historical log and no repeated full lifecycle or fresh installation.
+Owner authorization covers package commits/PRs/publication, test installation/cleanup and metadata-only stable promotion; existing non-blocking policy and live limitations remain explicit. Production requires separate authorization.
+[
+  {
+    "id": "classic-auto-purchase",
+    "status": "OPEN",
+    "summary": "Existing unchanged Upstream Bot behavior requires manual confirmation after top-up; frontend does not close this limitation."
+  },
+  {
+    "id": "unused-legacy-email-wrapper",
+    "status": "OPEN",
+    "summary": "Existing unused createEmail wrapper declares an endpoint absent from the exact Bot schema; the current form uses the supported createCombined -> /send. The wrapper is unchanged."
+  },
+  {
+    "id": "exact-compatibility-evidence",
+    "status": "BLOCKED",
+    "summary": "Full response-field parity and authenticated staging remain unverified. Local unit and mocked browser checks do not establish full runtime compatibility."
+  },
+  {
+    "id": "physical-platform-and-payment",
+    "status": "BLOCKED",
+    "summary": "Physical Telegram Android/iOS, accessibility, payment/recovery/renewal/concurrency/panel/admin scenarios were not verified by local checks."
+  },
+  {
+    "id": "dependency-security-audit",
+    "status": "OPEN",
+    "summary": "The unchanged dependency lockfile has 11 npm audit findings (1 low, 2 moderate, 8 high). Audit remains non-blocking under the existing release policy; no fix or reachability conclusion is claimed."
+  }
+]
+Public Bundle receipt:
+{
+  "result": "PASS",
+  "tag": "bundle-v2026.10.10.1",
+  "release_id": 409014979,
+  "immutable": true,
+  "prerelease": true,
+  "public_assets_verified": true,
+  "unauthenticated_download": true,
+  "assets": {
+    "cabinet-dist.tar.gz": "a3f119a4548d7f49067406e1a4e15f3020d1eeff1da00490130e1600ec40d0b0",
+    "cabinet-dist.tar.gz.sha256": "e17093064816f443c32711a8b378bc4d235ecbf050d4cf6add3ac7fb79e2cb65",
+    "installer-2026.10.10.1.tar.gz": "eff17b515f9714dcefee88652d884e64598300941f3b9519d77bcf9e2e75752d",
+    "installer-2026.10.10.1.tar.gz.sha256": "d050ee79612a010e0bf1d2e7c1e136f75f715245ed258035ddf3cbe0070f890e",
+    "release-provenance.json": "ecc0d0c0d0a9d03a697c4ff687d45960edd6c02f686173f333194dda72d0c485",
+    "release.json": "8e367a74905878d223e39d0fd2793916f9c7bdb2255c8b41ea09c4dc991942c3"
+  },
+  "release": "2026.10.10.1",
+  "installer_sha": "75c49bec9c2a764e123fc0ef675f8c45fc22a1ab",
+  "cabinet_sha": "1d046656fbb01a928fd54a28694e10105d4185f8",
+  "bot_sha": "877690a7039d1326b2c00eda3e297879b80c0678",
+  "bundle_identity": "bc2d203b48dfaeb8c18f9311202aa0b99e7617e5f4f0383f3409a45a74d8d019",
+  "cabinet_artifact_sha256": "a3f119a4548d7f49067406e1a4e15f3020d1eeff1da00490130e1600ec40d0b0",
+  "protected": {
+    "bot_repository": "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",
+    "bot_sha": "877690a7039d1326b2c00eda3e297879b80c0678",
+    "postgres_image": "postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23",
+    "redis_image": "redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2",
+    "backend_contract": "1",
+    "bot_backend_contract": "1",
+    "cabinet_backend_contract": "1",
+    "configuration_schema": 1,
+    "manifest_schema": 2,
+    "migration_policy": "rollback-compatible",
+    "target_os": "ubuntu-24.04",
+    "target_platform": "linux/amd64"
+  },
+  "marker_reviews": [
+    {
+      "path": "assets/vendor-crypto-C22YYRe_.js",
+      "sha256": "b7e62a36521c872d049f4e015458780e0a8e7bd4e7d71b33801717ad3b8cd807",
+      "reason": "RSA serialization marker only; byte-identical public stable vendor module, no embedded PEM key material"
+    }
+  ]
+}
