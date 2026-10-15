@@ -1,0 +1,21 @@
+Sanitized excerpt of saved native transition log; not a new run.
+Installer 75c49bec9c2a764e123fc0ef675f8c45fc22a1ab
+Bot 877690a7039d1326b2c00eda3e297879b80c0678 -> 5bda3c56f0afd9f4813e9c6fa48934948b05ebae
+Cabinet reference bundle-v2026.10.10.1; new uncommitted adaptation not retested.
+Raw native log SHA256 d07d299356d778fe29ae7ffdec9167bd474285bbede50202694047a8706ef6da
+
+transition-baseline:committed
+TRANSITION_PROOF={"mode":"seed","revision":"0127","users_preserved":2,"balances_kopeks":[12345,23456],"legacy_transaction_preserved":true,"subscriptions":0,"panel_write_calls":0,"data_origin":"isolated native ORM fixture; no actual merchant payment"}
+legacy-data:seeded-0127
+TRANSITION_PROOF={"mode":"verify","revision":"0127","users_preserved":2,"balances_kopeks":[12345,23456],"legacy_transaction_preserved":true,"subscriptions":0,"panel_write_calls":0,"data_origin":"isolated native ORM fixture; no actual merchant payment"}
+cross-version-injected-failure:0127-restored-verified
+TRANSITION_PROOF={"mode":"verify","revision":"0131","users_preserved":2,"balances_kopeks":[12345,23456],"legacy_transaction_preserved":true,"subscriptions":0,"panel_write_calls":0,"data_origin":"isolated native ORM fixture; no actual merchant payment"}
+cross-version-update:0127-to-0131-committed
+TARGETED_CROSS_VERSION_TRANSITION_PASS
+
+Saved native exit code: 0
+Rollback receipt: {"outcome":"rolled_back","before_revision":"0127","after_revision":"0131","failed_stage":"verify","rollback_verified":true,"recovery_plan":null,"error_classification":"intentional external failure after successful native verify-release","restored_revision_verified":"0127","restored_bot_sha_verified":"877690a7039d1326b2c00eda3e297879b80c0678"}
+Commit receipt: {"outcome":"committed","before_revision":"0127","after_revision":"0131","failed_stage":null,"rollback_verified":false,"recovery_plan":null,"error":null,"final_revision_verified":"0131","final_bot_sha_verified":"5bda3c56f0afd9f4813e9c6fa48934948b05ebae"}
+Cleanup SKIPPED_OWNER_REQUEST; runtime left running at collection.
+Transition image source-integrity probe NOT_RUN_STOP_REQUEST.
+Publication evidence NOT_ACCEPTED; full S9 PARTIAL.

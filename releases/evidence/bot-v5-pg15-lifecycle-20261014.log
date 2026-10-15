@@ -1,0 +1,20 @@
+Native Installer / Bot v5 / PG15 lifecycle — 2026-10-14
+Installer 75c49bec9c2a764e123fc0ef675f8c45fc22a1ab
+Bot 5bda3c56f0afd9f4813e9c6fa48934948b05ebae
+Private manifest SHA256 58269e5413449bbca52637ca8c318023921cda225c4e3c82f13a1f62bd9f5220
+Cabinet reference bundle-v2026.10.10.1 (unchanged exact source/artifact)
+fresh-install:committed
+non-root-runtime:verified
+repeat-install:committed
+settings-draft:committed
+legacy-migration:verified
+two-project-isolation:verified
+protected-update:committed
+protected-update-injected-failure:rolled-back-verified
+file-recovery-and-launcher:verified
+uninstall:stack-removed-management-preserved
+Ubuntu 24.04 full lifecycle integration passed.
+Original SSH disconnected; final native log and independent terminal stage receipt recovered; lifecycle was not repeated.
+Baseline files restored: 236
+Owned roots / runtime / webhook / image tag absent; local private config unchanged.
+Publication evidence NOT_ACCEPTED; actual cross-version transition not covered.
