@@ -1,0 +1,54 @@
+{
+  "kind": "private-installer-cross-version-transition-run",
+  "result": "CROSS_VERSION_TRANSITION_PASS",
+  "exit_code": 0,
+  "source": {
+    "installer_sha": "75c49bec9c2a764e123fc0ef675f8c45fc22a1ab",
+    "installer_tree_sha": "6606a783904f81959441b846e757004530728908",
+    "archive_sha256": "eff17b515f9714dcefee88652d884e64598300941f3b9519d77bcf9e2e75752d"
+  },
+  "baseline": {
+    "bot_sha": "877690a7039d1326b2c00eda3e297879b80c0678",
+    "revision": "0127",
+    "manifest_sha256": "8e367a74905878d223e39d0fd2793916f9c7bdb2255c8b41ea09c4dc991942c3"
+  },
+  "target": {
+    "bot_sha": "5bda3c56f0afd9f4813e9c6fa48934948b05ebae",
+    "revision": "0131",
+    "manifest_sha256": "1df216dc95f4a67bd6e58831bdf4b79012cb48c38188c1bb82cc301cb072237f"
+  },
+  "runtime": {
+    "images": {
+      "postgres": "postgres@sha256:4006528dcbdd9be8c1aaa50389caea4e93c46d6f54c3533bcd3253725e526e23",
+      "redis": "redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2"
+    },
+    "target_os": "ubuntu-24.04",
+    "target_platform": "linux/amd64",
+    "pg18_transition": false
+  },
+  "cabinet_reference": {
+    "bundle": "bundle-v2026.10.10.1",
+    "artifact_sha256": "a3f119a4548d7f49067406e1a4e15f3020d1eeff1da00490130e1600ec40d0b0",
+    "artifact_url": "https://github.com/alexforworkgpt-source/installer/releases/download/bundle-v2026.10.10.1/cabinet-dist.tar.gz",
+    "backend_contract": "1",
+    "repository": "https://github.com/alexforworkgpt-source/custom-cabinet.git",
+    "source_sha": "1d046656fbb01a928fd54a28694e10105d4185f8"
+  },
+  "native_stages": [
+    "transition-baseline:committed",
+    "legacy-data:seeded-0127",
+    "cross-version-injected-failure:0127-restored-verified",
+    "cross-version-update:0127-to-0131-committed"
+  ],
+  "cleanup": {
+    "status": "SKIPPED_OWNER_REQUEST",
+    "runtime_left_running_at_collection": true,
+    "owner_requested_vps_reinstall": true,
+    "postflight_verified": false,
+    "final_database_dump_collected": false,
+    "final_project_control_archives_collected": false,
+    "state_after_possible_reinstall": "UNKNOWN"
+  },
+  "started_at_utc": "2026-10-14T09:46:13.336863+00:00",
+  "collected_at_utc": "2026-10-14T09:56:17.867517+00:00"
+}
