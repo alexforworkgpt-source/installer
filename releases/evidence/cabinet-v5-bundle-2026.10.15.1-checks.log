@@ -1,0 +1,111 @@
+Custom Cabinet / Release Bundle 2026.10.15.1 final evidence
+Scope: owner-authorized exact source, public assets, compiled browser matrix and targeted disposable Ubuntu installation/cleanup. Production and latest unchanged; no backend source/API/business/migration changes.
+Comparison: bundle-v2026.10.10.1 / Cabinet 1d046656fbb01a928fd54a28694e10105d4185f8; old public Bot v4.15 changes to unchanged selected Bot v5.
+Cabinet: cabinet-v2026.10.15.1 / cc17e371d2db45e8c498dc944923d3b8354892e9 / tree 20cc117aae6ecae68af0b99a89a63751b8cc6a5f
+Installer: installer-v2026.10.02 / 75c49bec9c2a764e123fc0ef675f8c45fc22a1ab
+Unchanged target Bot: 5bda3c56f0afd9f4813e9c6fa48934948b05ebae
+Cabinet publication: https://github.com/alexforworkgpt-source/custom-cabinet/actions/runs/38780518278
+Exact source CI/publication: Linux Node24/26 each1084 frontend tests/176 files and15 publication guards PASS; lint/format/full TypeScript/build/CodeQL PASS.
+CodeQL branch review:32 existing open alert IDs, no new IDs vs baseline. Existing alerts are not declared resolved.
+Security Audit non-blocking policy retained:11 dependency findings (1 low,2 moderate,8 high), unchanged lockfile; no upgrade or reachability claim.
+Committed UPSTREAM machine fields retain last fully verified v1.79.0 integration; the dated source ledger separately records selected v1.80.1 adaptation. Release metadata matches actual committed provenance. The original record mismatch was reproduced with the official validator, corrected in record/docs only and reviewed before merge; immutable source/tag/artifact were preserved.
+Bundle publication: https://github.com/alexforworkgpt-source/installer/actions/runs/38779130336; successful attempt2.
+Attempt1 stopped before draft/assets because the new Bundle tag precondition had been omitted. Existing guard failed without the tag and passed after creating the new immutable tag at the exact Installer SHA. No Installer/workflow source change; no existing Release/assets replaced.
+Bundle actual141 contract tests, runtime image digest/platform checks, source/lifecycle binding, two build/archive comparison, upload/re-download and candidate publication PASS.
+First Actions compilation actually installed473 packages and transformed2973 modules; the second invocation used cache. Independent local --no-cache Linux/amd64 build used the same source/lockfile/pinned Node+Nginx images/build args. All six public files equal the independent local prepared package.
+Earlier Windows artifact0aa20cd had284 files and is not asserted equal to the new Docker archive. The new Docker bytes are byte-identical to the public archive and were checked directly.
+First full Docker-artifact browser run:1145 PASS/35 configured SKIP/1 FAIL. One carousel assertion observed slide4 after a16.364s page load and a32.538s external-font request; carousel auto-advance is6s. The unchanged failing scenario then passed10 consecutive focused runs. This failure remains recorded; source, assertions, timeouts, retries and compiled bytes were not changed.
+The unchanged full repeat also gave1145 PASS/35 SKIP/1 FAIL in the same Yandex-carousel assertion on mobile375. Its trace shows page.goto(load)11.872s and external Google Fonts CSS12.074s while carousel auto-advance is6s. Both full failures are retained and are not renamed PASS. The final environment isolates only fonts.googleapis.com/fonts.gstatic.com to loopback for immediate failure; a direct probe failed in186ms. The same unchanged scenario then passed50 consecutive runs across all5 viewport projects. This checks fallback fonts and does not claim successful remote-font loading.
+The third full font-isolated run also ended1145 PASS/35 SKIP/1 FAIL, now in the Cashera management assertion: a full-page screenshot temporarily changed browser viewport1280->1->1280, remounting the responsive overlay and losing its expanded options before the cancellation click. Original unchanged focused20/20 PASS did not erase that failure. Timing/CPU probes reproduced6 PASS/6 FAIL with Chrome155, and again6 PASS/6 FAIL with the exact Playwright-pinned Chromium153. A static screenshot probe initially failed but its later small repeat passed in both browsers; switching browser alone was not declared a fix.
+Only the ancillary cashera-management.png screenshot option changed from fullPage:true to false in an owned test copy. All49 copied input files were hash-compared with source: only that single capture line differs; functional assertions, API fixtures, timeouts, retries and product source bytes are unchanged. Under the same12 timing/CPU profiles and pinned Chromium153, capture-only regression changed6 PASS/6 FAIL to12 PASS/0 FAIL; no1px viewport was observed after the fix. This is screenshot-harness correction, not a backend/payment/product fix. Original tagged/owner test source is preserved.
+Final browser uses Playwright1.63 matching Chromium153.0.8010.12/revision1243. The standard browser downloader timed out; curl fetched the same pinned archive from the official redirect destination, with exact205123748-byte size/official MD5 and saved SHA256, safe extraction into an owned temporary folder. No package/lockfile change.
+Final full gate:1146 PASS/35 configured SKIP/0 FAIL/0 flaky within that run; no retries,2 workers, pinned Chromium153, five viewport projects320/375/768/1024/1280; archive files285. API fixtures are not live provider or physical-device proof.
+Initial browser report SHA256:6e12868ade79be0ba7cbcfb635c08b1cda571cdb6cb8787ffaf5f71392675279; initial result:FAIL. The initial failure is not renamed PASS.
+Second browser report SHA256:30b0f2304f51cff804f1901346a86fec8c6b2434e7d8dc9895b4378c9ff7664c; second result:FAIL. Final environment:Only external Google Fonts domains resolve to loopback for fast failure; fallback fonts. All functional assertions/timeouts/retries unchanged. One ancillary Cashera screenshot captures viewport rather than full page to avoid browser-induced1280->1->1280 resize/remount; original owner/tagged test file unchanged.
+Third browser report SHA256:c1b0522430471e65a915a0c22299281aadffe72e5049546f8516daa733942691; third result:FAIL; capture-only diff SHA256:6a7f0613b028aac4103bc263e5ed73503463d45e8651c2fee6babb7471cb743b; browser archive SHA256:415968b02065d4a9e2c10b85f0ae9f489b8fba500e94d9d0a7b7c4852a7234c1
+Browser archive SHA256:c1afff2cffa8a00a94d17a7818597c84e3c8e9d0be4d1718f8f8a8c2c86cbfc4; report SHA256:285920a57d94f7a8d87e337b274b8e98a2fea199e1b5e04b9f84a694407d4602; log SHA256:646c19db96af83eee5f106e121b44620faaa6a64398fd3dceb49b53f15205292
+Public unauthenticated checks: exact six Bundle and two Cabinet assets, size/digest/checksum, tag/source/tree/provenance, archive safety and protected tuple PASS. Crypto serialization markers are byte-identical to the previous stable vendor module; no embedded PEM secret material.
+Bounded compatibility: https://github.com/alexforworkgpt-source/custom-cabinet/blob/29af741ef21be5db2caf92d78f4c866fe660e0e4/releases/evidence/compatibility-v1801-v5-cc17e37-20261015.md
+Lifecycle reused: https://github.com/alexforworkgpt-source/installer/blob/9ac02fe45a1d246c4c9dfa1697982c3cd6fc3e15/releases/evidence/lifecycle-v5-pg15-75c49be-20261015.json
+Previous-to-candidate Bot4.15/schema0127 -> Bot5/schema0131 transition PASS from existing14 October native proof: https://github.com/alexforworkgpt-source/installer/blob/f670135e8587e4f08aa88fbb6db70b102e3e998d/releases/evidence/bot-v5-pg15-transition-20261014.log
+The same-version lifecycle and cross-version transition keep their exact Installer/protected identities and recorded limits. The original transition cleanup remains SKIPPED_OWNER_REQUEST. No full lifecycle or backend acceptance suite rerun.
+TEST-STAND INCIDENT: the first external smoke harness reloaded the remembered previous project through set_default_runtime_values/load_state. The native PostgreSQL identity guard stopped deployment; the external cleanup trap incorrectly deleted the previous disposable stand, its three containers, project directory and PostgreSQL/Redis volumes. This was an execution-wrapper error, not an accepted cleanup. No production connection or transition occurred.
+Independent inventory found no current full backup of that previous stand. Older separate sandbox archives and the existing lifecycle/transition receipts survived, but are not represented as a backup of the deleted stand. Previous stand:NOT_RESTORED_OWNER_ACCEPTED_FRESH_STAND. The owner was informed and explicitly chose to continue with a new clean test stand; this does not retroactively authorize the deletion.
+The original failed smoke is not PASS. A separate new fresh smoke used the same public immutable Installer source and Bundle in a unique absent integration root, isolated local/global/legacy state locators and exact path/Compose guards after state changes and before cleanup. Local offline guards rejected wrong-root and wrong-Compose paths before any SSH operation.
+The first new-clean-stand attempt installed successfully and printed all expected identities/endpoints, but its external long SSH command was truncated and ended with a syntax error. It is not a full smoke PASS. Read-only probes reproduced the Git-for-Windows argument truncation:9000 and12000 requested characters became8138; the exact untruncated script passed bash -n. Independent postflight confirmed its own resources removed and host/config/38 management files preserved. Transferring12000 bytes through stdin passed. Only the external harness delivery changed to an owned uploaded script plus short execution path; the unchanged public Bundle was then installed and fully checked again.
+Fresh pinned SSH/Ubuntu/disk/RAM/root preflight PASS; no existing containers. New public Bundle installed with clean data, exact source/artifact identities, public endpoints and health checked. Cleanup removed only that new owned root/containers/volumes/Caddy snippet/private temporary env. The separate owned Installer source/proof packet is retained.
+outcome=committed
+release=2026.10.15.1
+bundle_identity=507b1ba168433ec3bcfbc5c430c1022594b8a8e5d2a02feaf8fc3f828ed1aa2d
+bot_sha=5bda3c56f0afd9f4813e9c6fa48934948b05ebae
+cabinet_sha=cc17e371d2db45e8c498dc944923d3b8354892e9
+cabinet_artifact_sha256=c1afff2cffa8a00a94d17a7818597c84e3c8e9d0be4d1718f8f8a8c2c86cbfc4
+containers=3
+cabinet_http=200
+instruction_http=200
+branding_http=200
+health_status=ok
+webhook_default_http=404
+cache_control=no-store
+targeted_fresh_smoke=PASS
+cleanup_postflight=PASS
+local_server_env_unchanged=true
+Independent new-smoke postflight PASS: new owned project/services/volumes/Caddy snippet absent; Caddy/UFW/global-locator bytes and38 management runtime files match the immediate pre-smoke baseline; temporary private environment absent. This is new-resource cleanup proof, not restoration or preservation proof for the deleted previous stand.
+Device gate:SKIPPED_OWNER_ACCEPTED for this current candidate/task, not PASS. Historical OPEN/BLOCKED facts remain their dated scope; independent backend/payment SDK/RBAC suites are not release completion conditions.
+Owner authorized package commits/PRs/tags/existing approvals/publication, targeted disposable installation/cleanup and metadata-only stable after gates. Existing assets/tags/latest/settings and owner code/index/HEADs are preserved.
+[
+  {
+    "id": "physical-telegram-device",
+    "status": "BLOCKED",
+    "summary": "SKIPPED_OWNER_ACCEPTED: owner waived the physical Telegram Android/iOS navigation/session/device gate only for this current candidate and task; no physical PASS is claimed. BLOCKED is the existing release-record schema representation of unverified coverage, not a request to reopen the waived gate."
+  },
+  {
+    "id": "classic-auto-purchase",
+    "status": "OPEN",
+    "summary": "Existing unchanged Upstream Bot behavior: manual purchase confirmation after top-up remains an accepted limitation."
+  },
+  {
+    "id": "unused-legacy-email-wrapper",
+    "status": "OPEN",
+    "summary": "The unused createEmail wrapper is unchanged; current UI uses the supported combined endpoint."
+  },
+  {
+    "id": "live-scope",
+    "status": "BLOCKED",
+    "summary": "Full live response-field parity, untested provider/recurring/renewal/concurrency and Panel mutation scenarios are not claimed PASS. Dated evidence retains its own scope; no backend acceptance suite is part of this release task."
+  },
+  {
+    "id": "dependency-security-audit",
+    "status": "OPEN",
+    "summary": "Fresh exact-source non-blocking audit: 11 findings (1 low, 2 moderate, 8 high). CodeQL completed with 32 existing open alert IDs and no new IDs compared with main. No dependency upgrade or reachability conclusion is claimed."
+  }
+]
+Public Bundle receipt:
+{
+  "result": "PASS",
+  "tag": "bundle-v2026.10.15.1",
+  "release_id": 414098322,
+  "immutable": true,
+  "prerelease": true,
+  "public_assets_verified": true,
+  "unauthenticated_download": true,
+  "assets": {
+    "cabinet-dist.tar.gz": "c1afff2cffa8a00a94d17a7818597c84e3c8e9d0be4d1718f8f8a8c2c86cbfc4",
+    "cabinet-dist.tar.gz.sha256": "29439ab819ad2834060f88e0ee0e2f2d29dd46a63db428a29f9ecb39ef9f9820",
+    "installer-2026.10.15.1.tar.gz": "eff17b515f9714dcefee88652d884e64598300941f3b9519d77bcf9e2e75752d",
+    "installer-2026.10.15.1.tar.gz.sha256": "71eadae44c1fedf5d329f72ed96eab010599f1202a70250d16bcc6fdef9fb375",
+    "release-provenance.json": "e57ed0d310acc7480de73eb4e04dda84282696cedcf78249d01533a24d57e941",
+    "release.json": "60f9eebda5f67e4f16cf4316adf0f976c714fc98988088902c42204ff9c9cb79"
+  },
+  "marker_reviews": [
+    {
+      "path": "assets/vendor-crypto-C22YYRe_.js",
+      "classification": "RSA_SERIALIZATION_MARKERS_BYTE_IDENTICAL_TO_PREVIOUS_PUBLIC_STABLE_VENDOR"
+    }
+  ],
+  "release": "2026.10.15.1",
+  "bundle_identity": "507b1ba168433ec3bcfbc5c430c1022594b8a8e5d2a02feaf8fc3f828ed1aa2d",
+  "bot_sha": "5bda3c56f0afd9f4813e9c6fa48934948b05ebae",
+  "cabinet_sha": "cc17e371d2db45e8c498dc944923d3b8354892e9",
+  "cabinet_artifact_sha256": "c1afff2cffa8a00a94d17a7818597c84e3c8e9d0be4d1718f8f8a8c2c86cbfc4"
+}
