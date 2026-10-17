@@ -29,4 +29,3 @@ class PostgresStateRestoreTests(unittest.TestCase):
             self.assertEqual(restored["POSTGRES_MAJOR"], "18")
             self.assertEqual(restored["POSTGRES_VOLUME_NAME"], "legacy-project_postgres18_data-upgrade1")
             self.assertEqual(restored["POSTGRES_IMAGE"], "postgres@sha256:fixture18")
-
