@@ -106,6 +106,18 @@ restore_previous_release_variables() {
   LAST_CABINET_VERSION_REF="$(context_value previous-last-cabinet-ref)"
   BOT_VERSION_REF="$(context_value previous-bot-sha)"
   CABINET_VERSION_REF="$(context_value previous-cabinet-sha)"
+  restore_context_postgres_storage previous
+}
+
+restore_context_postgres_storage() {
+  local prefix="$1"
+  if [[ -f "${context_dir}/${prefix}-postgres-major" ]]; then
+    POSTGRES_MAJOR="$(context_value "${prefix}-postgres-major")"
+    POSTGRES_VOLUME_NAME="$(context_value "${prefix}-postgres-volume")"
+  else
+    # Compatibility with interrupted transactions created by the PG15 Installer.
+    unset POSTGRES_MAJOR POSTGRES_VOLUME_NAME
+  fi
 }
 
 suspend_previous_migration_image_override() {
@@ -188,6 +200,7 @@ run_create_dump_stage() {
   write_context_value dump-reference "${dump_reference}"
   write_context_value dump-sha256 "$(file_sha256 "${dump_reference}")"
   sync -f "${dump_reference}"
+  protect_postgres_upgrade || return 1
   create_update_snapshot "release-bundle-$(context_value target-release)" >&2 || return 1
   snapshot_reference="${LAST_CREATED_SNAPSHOT_DIR}"
   write_context_value snapshot-reference "${snapshot_reference}"
@@ -264,8 +277,10 @@ run_apply_release_stage() {
   BOT_VERSION_REF="$(context_value target-bot-sha)"
   CABINET_VERSION_REF="$(context_value target-cabinet-sha)"
   suspend_previous_migration_image_override
-  render_compose_file "${POSTGRES_IMAGE}" "${REDIS_IMAGE}"
+  restore_context_postgres_storage target
+  render_compose_file "${POSTGRES_IMAGE}" "${REDIS_IMAGE}" "${POSTGRES_MAJOR:-}" "${POSTGRES_VOLUME_NAME:-}"
   compose_cmd config -q
+  apply_postgres_upgrade
   compose_cmd up -d --build --wait --wait-timeout 180 postgres redis bot
   render_caddy_file
   install_caddy_candidate
@@ -301,6 +316,8 @@ run_commit_release_stage() {
   BOT_VERSION_REF="$(context_value target-bot-sha)"
   CABINET_VERSION_REF="$(context_value target-cabinet-sha)"
 
+  restore_context_postgres_storage target
+
   (
     umask 077
     {
@@ -315,6 +332,7 @@ run_commit_release_stage() {
   write_context_value after-revision "${after_revision}"
   save_state
   mark_runtime_apply_state
+  record_postgres_upgrade_receipt committed
   sync -f "${STATE_FILE}"
   sync -f "${STATE_DIR}"
   write_update_marker committed
@@ -366,6 +384,11 @@ run_verify_rollback_stage() {
   [[ "${previous_release}" == "$(context_value previous-release-key)" ]]
   [[ "${dump_reference}" == "$(context_value dump-reference)" ]]
   restore_previous_release_variables
+  if postgres_upgrade_requested; then
+    postgres_assert_runtime "$(context_value previous-postgres-major)" \
+      "$(context_value previous-postgres-volume)" "$(context_value previous-postgres-image)"
+    verify_postgres_upgrade_manifest rollback
+  fi
   if [[ "$(context_value previous-bot-running)" == true ]]; then
     compose_cmd up -d --build --wait --wait-timeout 180 bot
     reload_caddy
@@ -380,6 +403,7 @@ run_verify_rollback_stage() {
   [[ "$(current_alembic_revision)" == "${before_revision}" ]]
   save_state
   mark_runtime_apply_state
+  record_postgres_upgrade_receipt rolled-back
   sync -f "${STATE_FILE}"
   sync -f "${STATE_DIR}"
   write_update_marker rolled-back
@@ -391,6 +415,11 @@ run_verify_commit_stage() {
   REDIS_IMAGE="$(context_value target-redis-image)"
   BOT_VERSION_REF="$(context_value target-bot-sha)"
   CABINET_VERSION_REF="$(context_value target-cabinet-sha)"
+  restore_context_postgres_storage target
+  if [[ -f "${context_dir}/target-postgres-major" ]]; then
+    postgres_assert_runtime "$(context_value target-postgres-major)" \
+      "$(context_value target-postgres-volume)" "$(context_value target-postgres-image)"
+  fi
   verify_release_checkout "${BOT_REPO_DIR}" "${BOT_VERSION_REF}"
   verify_release_checkout "${CABINET_REPO_DIR}" "${CABINET_VERSION_REF}"
   if [[ -f "${context_dir}/previous-migration-image.override.yml" ]]; then

@@ -18,6 +18,9 @@ bash tests/integration/completed-migration-runtime-identity.sh
 bash tests/integration/settings-runtime-change.sh
 bash tests/integration/release-bundle-shell.sh
 bash tests/integration/postgres-dump-verification.sh
+bash tests/integration/postgres-storage.sh
+bash tests/integration/postgres-image.sh
+bash tests/integration/postgres-upgrade-preflight.sh
 bash tests/integration/protected-update-adapter.sh
 bash tests/integration/protected-update-recovery.sh
 bash tests/integration/runtime-isolation.sh

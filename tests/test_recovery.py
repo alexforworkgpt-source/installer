@@ -189,6 +189,22 @@ class TransientStateProbe(RuntimeProbe):
 
 
 class RecoveryTests(unittest.TestCase):
+    def test_file_recovery_cannot_switch_pg18_to_stale_pg15_volume(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "project"
+            (root / "state").mkdir(parents=True)
+            base = f"PROJECT_ROOT='{root}'\nCOMPOSE_PROJECT_NAME='legacy-project'\n"
+            current = base + "POSTGRES_MAJOR='18'\nPOSTGRES_VOLUME_NAME='legacy-project_postgres18_data-upgrade1'\n"
+            state_file = root / "state/install.state"
+            state_file.write_text(current, encoding="utf-8")
+            archive = Path(temporary) / "before-upgrade.tar.gz"
+            create_file_backup_fixture(archive, root, {"project/state/install.state": base.encode()})
+            adapter = RuntimeProbe(root)
+            with self.assertRaisesRegex(RecoveryError, "PostgreSQL storage"):
+                recover_file_backup(archive, root, adapter)
+            self.assertFalse(adapter.quiesced)
+            self.assertEqual(state_file.read_text(encoding="utf-8"), current)
+
     def test_interrupted_extraction_leaves_runtime_and_files_unchanged(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

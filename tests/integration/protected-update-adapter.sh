@@ -74,6 +74,12 @@ write_value previous-last-cabinet-ref cabinet-older
 PROTECTED_UPDATE_ADAPTER_SOURCE_ONLY=true
 # shellcheck source=lib/protected_update_adapter.sh
 source "${SCRIPT_DIR}/lib/protected_update_adapter.sh"
+source "${SCRIPT_DIR}/lib/postgres_upgrade.sh"
+apply_postgres_upgrade() {
+  printf '%s\n' postgres-storage-attempt >> "${ORDER_LOG}"
+  [[ "${INJECTED_STAGE}" != postgres ]] || return 1
+  printf '%s\n' postgres-storage-verified >> "${ORDER_LOG}"
+}
 
 BOT_REPO_DIR="${PROJECT_ROOT}/repos/bot"
 CABINET_REPO_DIR="${PROJECT_ROOT}/repos/cabinet"
@@ -168,6 +174,7 @@ mark_runtime_apply_state() { printf '%s\n' mark-applied >> "${ORDER_LOG}"; }
 save_state() {
   printf '%s\n' "${CURRENT_RELEASE}" > "${TEMP_ROOT}/saved-release"
   printf '%s\n' "${CABINET_REPO_URL}" > "${TEMP_ROOT}/saved-cabinet-repository"
+  printf '%s:%s\n' "${POSTGRES_MAJOR:-15}" "${POSTGRES_VOLUME_NAME:-legacy}" > "${TEMP_ROOT}/saved-postgres-storage"
 }
 rollback_release_sources() {
   [[ "${CABINET_REPO_URL}" == https://example.test/upstream-cabinet.git ]]
@@ -191,6 +198,10 @@ grep -Fq "recovery_point=${dump_reference}" "${marker_file}"
 
 run_apply_release_stage
 [[ ! -e "${STATE_DIR}/migration-image.override.yml" ]]
+grep -Fxq postgres-storage-verified "${ORDER_LOG}"
+storage_line="$(grep -n -m1 '^postgres-storage-verified$' "${ORDER_LOG}" | cut -d: -f1)"
+bot_line="$(grep -n -m1 '^start-bot$' "${ORDER_LOG}" | cut -d: -f1)"
+((storage_line < bot_line))
 grep -Fxq \
   'render-compose:postgres@sha256:new:redis@sha256:new' \
   "${ORDER_LOG}"
@@ -249,6 +260,11 @@ assert_stage_failure() {
   local label="$1"
   local function_name="$2"
   local status
+  if [[ "${function_name}" == run_apply_release_stage ]]; then
+    cp "${CONTEXT_DIR}/previous-migration-image.override.yml" "${STATE_DIR}/migration-image.override.yml"
+  fi
+  local starts_before="$(grep -c '^start-bot$' "${ORDER_LOG}" || true)"
+  local attempts_before="$(grep -c '^postgres-storage-attempt$' "${ORDER_LOG}" || true)"
   set +e
   (set -e; "${function_name}")
   status=$?
@@ -257,9 +273,13 @@ assert_stage_failure() {
     printf 'Injected %s failure was accepted by production adapter.\n' "${label}" >&2
     exit 1
   fi
+  if [[ "${label}" == postgres ]]; then
+    [[ "$(grep -c '^start-bot$' "${ORDER_LOG}" || true)" == "${starts_before}" ]]
+    [[ "$(grep -c '^postgres-storage-attempt$' "${ORDER_LOG}" || true)" -eq $((attempts_before + 1)) ]]
+  fi
 }
 
-for injected_stage in checkout cabinet compose caddy telegram; do
+for injected_stage in checkout cabinet compose postgres caddy telegram; do
   INJECTED_STAGE="${injected_stage}"
   assert_stage_failure "${injected_stage}" run_apply_release_stage
 done
@@ -268,5 +288,23 @@ for injected_stage in migration health; do
   assert_stage_failure "${injected_stage}" run_verify_release_stage
 done
 INJECTED_STAGE=""
+
+# Each adapter stage is a separate process. Commit must persist target storage,
+# and rollback must restore previous storage even after state reloads.
+write_context_value target-postgres-major 18
+write_context_value target-postgres-volume legacy-project_postgres18_data-test
+write_context_value previous-postgres-major 15
+write_context_value previous-postgres-volume legacy-project_postgres_data
+record_postgres_upgrade_receipt() { :; }
+postgres_assert_runtime() { :; }
+verify_postgres_upgrade_manifest() { :; }
+POSTGRES_MAJOR=15
+POSTGRES_VOLUME_NAME=legacy-project_postgres_data
+run_commit_release_stage "${dump_reference}" rev-old rev-new
+[[ "$(<"${TEMP_ROOT}/saved-postgres-storage")" == 18:legacy-project_postgres18_data-test ]]
+POSTGRES_MAJOR=18
+POSTGRES_VOLUME_NAME=legacy-project_postgres18_data-test
+run_rollback_release_stage
+[[ "$(<"${TEMP_ROOT}/saved-postgres-storage")" == 15:legacy-project_postgres_data ]]
 
 printf '%s\n' 'Protected Update adapter harness passed.'

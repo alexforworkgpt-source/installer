@@ -392,6 +392,8 @@ restore_state_from_runtime() {
 
   [[ -f "${bot_env}" ]] || die "Файл не найден: ${bot_env}. Восстановление state невозможно."
   [[ -f "${cabinet_env}" ]] || die "Файл не найден: ${cabinet_env}. Восстановление state невозможно."
+  [[ -f "${project_root}/state/docker-compose.yml" ]] \
+    || die "Compose отсутствует. Восстановите проверенный backup конфигурации; угадывать PostgreSQL storage небезопасно."
   mkdir -p "$(dirname "${runtime_state_file}")"
 
   local guessed_bot_repo_dir="${project_root}/repos/bot-backend"
@@ -406,6 +408,13 @@ restore_state_from_runtime() {
     guessed_cabinet_repo_url="$(git -C "${guessed_cabinet_repo_dir}" remote get-url origin 2>/dev/null || printf '%s' "${DEFAULT_CABINET_REPO_URL}")"
   fi
 
+  local recovery_identity=()
+  if [[ -f "${project_root}/state/docker-compose.yml" ]]; then
+    recover_postgres_runtime_identity "${project_root}" \
+      || die "Не удалось подтвердить текущие image/major/volume PostgreSQL. State не изменён."
+    recovery_identity=("${RECOVERED_COMPOSE_PROJECT}" "${RECOVERED_POSTGRES_IMAGE}" \
+      "${RECOVERED_POSTGRES_MAJOR}" "${RECOVERED_POSTGRES_VOLUME}" "${RECOVERED_REDIS_IMAGE}")
+  fi
   run_env_helper restore-state \
     "${project_root}" \
     "${runtime_state_file}" \
@@ -414,7 +423,8 @@ restore_state_from_runtime() {
     "${guessed_bot_repo_url}" \
     "${guessed_cabinet_repo_url}" \
     "${guessed_bot_repo_dir}" \
-    "${guessed_cabinet_repo_dir}"
+    "${guessed_cabinet_repo_dir}" \
+    "${recovery_identity[@]}" || return 1
   secure_private_file "${runtime_state_file}"
 
   PROJECT_ROOT="${project_root}"
@@ -505,6 +515,8 @@ full_install_once() {
   CABINET_REPO_URL="${PREPARED_CABINET_REPO_URL}"
   CABINET_VERSION_REF="${PREPARED_CABINET_SHA}"
   POSTGRES_IMAGE="${PREPARED_POSTGRES_IMAGE}"
+  POSTGRES_MAJOR="$(postgres_image_major "${POSTGRES_IMAGE}")" || return 1
+  unset POSTGRES_VOLUME_NAME
   REDIS_IMAGE="${PREPARED_REDIS_IMAGE}"
   configure_stack pending-first-install || return 1
   set_runtime_paths

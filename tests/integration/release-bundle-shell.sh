@@ -62,6 +62,7 @@ checkout_repo_ref \
   "$(git -C "${cabinet_repository[0]}" rev-parse --show-toplevel)" ]]
 
 PROJECT_ROOT="${TEMP_ROOT}/project"
+COMPOSE_PROJECT_NAME=release-shell-test
 STATE_DIR="${PROJECT_ROOT}/state"
 RUNTIME_DIR="${PROJECT_ROOT}/runtime"
 CABINET_DIST_DIR="${RUNTIME_DIR}/cabinet-dist"
@@ -116,6 +117,7 @@ write_manifest "${BOT_SHA}" "${MISSING_CABINET_SHA}" "${ARTIFACT_SHA256}"
 
 ensure_root() { :; }
 require_state_file() { :; }
+postgres_image_major() { printf '%s' 15; }
 log_info() { :; }
 log_warn() { :; }
 log_error() { :; }

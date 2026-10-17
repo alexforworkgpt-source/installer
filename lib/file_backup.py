@@ -220,6 +220,16 @@ def _validate_state_paths(content: bytes, project_root: Path) -> None:
     if actual_compose_project != expected_compose_project and not trusted_legacy_project:
         raise RecoveryError("file backup install.state has unsafe COMPOSE_PROJECT_NAME")
 
+    # This artifact contains files, not PostgreSQL data. Switching storage would
+    # silently activate a stale database (or create an empty one).
+    if trusted_current:
+        current_major = trusted_current.get("POSTGRES_MAJOR") or "15"
+        restored_major = state.get("POSTGRES_MAJOR") or "15"
+        current_volume = trusted_current.get("POSTGRES_VOLUME_NAME") or f"{actual_compose_project}_postgres_data"
+        restored_volume = state.get("POSTGRES_VOLUME_NAME") or f"{actual_compose_project}_postgres_data"
+        if (current_major, current_volume) != (restored_major, restored_volume):
+            raise RecoveryError("file backup cannot change PostgreSQL storage; database recovery is required")
+
 
 def validate_file_backup(
     archive: Path,

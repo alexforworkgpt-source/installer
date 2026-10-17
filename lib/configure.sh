@@ -217,6 +217,8 @@ render_bot_env() {
 render_compose_file() {
   local requested_postgres_image="${1:-}"
   local requested_redis_image="${2:-}"
+  local requested_postgres_major="${3:-}"
+  local requested_postgres_volume="${4:-}"
 
   require_state_file
   if [[ -n "${requested_postgres_image}" ]]; then
@@ -225,6 +227,11 @@ render_compose_file() {
   if [[ -n "${requested_redis_image}" ]]; then
     REDIS_IMAGE="${requested_redis_image}"
   fi
+  if [[ -n "${requested_postgres_major}" ]]; then
+    POSTGRES_MAJOR="${requested_postgres_major}"
+    POSTGRES_VOLUME_NAME="${requested_postgres_volume}"
+  fi
+  postgres_storage_defaults || return 1
 
   render_template \
     "${INSTALLER_DIR}/templates/docker-compose.yml.tpl" \
@@ -238,6 +245,8 @@ render_compose_file() {
     "POSTGRES_DB=${POSTGRES_DB}" \
     "POSTGRES_USER=${POSTGRES_USER}" \
     "POSTGRES_IMAGE=${POSTGRES_IMAGE}" \
+    "POSTGRES_VOLUME_KEY=${POSTGRES_VOLUME_KEY}" \
+    "POSTGRES_MOUNT_PATH=${POSTGRES_MOUNT_PATH}" \
     "REDIS_IMAGE=${REDIS_IMAGE}" \
     "BOT_HTTP_PORT=${BOT_HTTP_PORT}"
 }

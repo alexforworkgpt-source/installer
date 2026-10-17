@@ -1,5 +1,10 @@
 # Перенос установки на другую VPS
 
+Для смены PostgreSQL 15 на 18 на существующем сервере см.
+[перенос PostgreSQL в Installer](docs/postgresql18-upgrade.md).
+Полный migration package ниже импортируется только в пустой target root;
+он не применяется поверх работающей установки для смены версии PostgreSQL.
+
 Штатный file backup предназначен для проверяемого восстановления файлов на том
 же сервере и не содержит PostgreSQL или Redis. Для переноса и disaster recovery
 используйте отдельный migration package из раздела `Перенос на другой VPS`.
