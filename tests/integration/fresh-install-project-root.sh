@@ -33,6 +33,7 @@ assert_supported_os() { :; }
 install_base_packages() { log_info "bootstrap packages prepared"; }
 install_docker_engine() { log_info "Docker prepared"; }
 ensure_docker_compose_plugin() { log_info "Compose plugin prepared"; }
+postgres_image_major() { printf '%s' 18; }
 prepare_fresh_install_release() {
   log_info "Release Bundle prepared"
   PREPARED_RELEASE="fresh-root-test"

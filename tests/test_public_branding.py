@@ -37,6 +37,10 @@ ALLOWED_TECHNICAL_FRAGMENTS_BY_FILE = {
         "`bedolaga-migration-`",
         "`bedolaga-file-backup`",
     ),
+    "docs/postgresql18-upgrade.md": (
+        "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot/blob/5bda3c56f0afd9f4813e9c6fa48934948b05ebae/docs/postgresql-18-upgrade.md",
+        "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot/blob/5bda3c56f0afd9f4813e9c6fa48934948b05ebae/scripts/pg-upgrade.sh",
+    ),
 }
 
 

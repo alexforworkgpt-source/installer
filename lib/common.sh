@@ -12,6 +12,9 @@ ENV_HELPER="${INSTALLER_DIR}/lib/env_helper.py"
 RECOVERY_HELPER="${INSTALLER_DIR}/lib/recovery.py"
 RECOVERY_RUNTIME_ADAPTER="${INSTALLER_DIR}/lib/recovery_runtime.sh"
 MIGRATION_RUNTIME_HELPER="${INSTALLER_DIR}/lib/migration_runtime.py"
+source "${INSTALLER_DIR}/lib/postgres.sh"
+source "${INSTALLER_DIR}/lib/postgres_upgrade.sh"
+source "${INSTALLER_DIR}/lib/postgres_recovery.sh"
 
 DEFAULT_PROJECT_ROOT="/opt/bot-stack"
 DEFAULT_BOT_REPO_URL="https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git"
@@ -1363,6 +1366,7 @@ reset_loaded_state_vars() {
   unset TIMEZONE DEFAULT_LANGUAGE APP_NAME APP_LOGO
   unset WEBHOOK_SECRET_TOKEN WEB_API_DEFAULT_TOKEN CABINET_JWT_SECRET
   unset POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD POSTGRES_IMAGE REDIS_URL REDIS_IMAGE
+  unset POSTGRES_MAJOR POSTGRES_VOLUME_NAME POSTGRES_VOLUME_KEY POSTGRES_MOUNT_PATH
   unset BOT_HTTP_PORT BOT_RUN_MODE WEB_API_ENABLED CABINET_ENABLED COMPOSE_PROJECT_NAME
   unset CABINET_EMAIL_AUTH_ENABLED CABINET_EMAIL_VERIFICATION_ENABLED
   unset BOT_VERSION_REF CABINET_VERSION_REF LAST_BOT_VERSION_REF LAST_CABINET_VERSION_REF
@@ -1778,6 +1782,7 @@ restore_snapshot_configs() {
 restore_snapshot_files_from_path() {
   local snapshot_path="$1"
   [[ -d "${snapshot_path}" ]] || return 1
+  postgres_require_same_snapshot_storage "${snapshot_path}/install.state" || return 1
 
   [[ -f "${snapshot_path}/install.state" ]] && cp "${snapshot_path}/install.state" "${STATE_FILE}"
   [[ -f "${snapshot_path}/bot.env" ]] && cp "${snapshot_path}/bot.env" "${BOT_ENV_FILE}"
@@ -1986,6 +1991,8 @@ adopt_completed_migration_runtime_identity() {
     || die "Не удалось проверить identity завершенного migration import."
   eval "${assignments}"
 
+  postgres_storage_defaults || die "Небезопасная identity PostgreSQL storage."
+
   for service in bot postgres redis; do
     case "${service}" in
       bot) expected_image="${MIGRATION_BOT_IMAGE}" ;;
@@ -2005,8 +2012,8 @@ adopt_completed_migration_runtime_identity() {
     fi
     case "${service}" in
       postgres)
-        expected_volume="${COMPOSE_PROJECT_NAME}_postgres_data"
-        expected_destination="/var/lib/postgresql/data"
+        expected_volume="${POSTGRES_VOLUME_NAME}"
+        expected_destination="${POSTGRES_MOUNT_PATH}"
         ;;
       redis)
         expected_volume="${COMPOSE_PROJECT_NAME}_redis_data"
@@ -2018,7 +2025,7 @@ adopt_completed_migration_runtime_identity() {
     grep -Fxq "${expected_destination}=${expected_volume}" <<<"${actual_mounts}" \
       || die "Completed migration ${service} volume не подключен к runtime."
   done
-  docker volume inspect "${COMPOSE_PROJECT_NAME}_postgres_data" >/dev/null \
+  docker volume inspect "${POSTGRES_VOLUME_NAME}" >/dev/null \
     || die "Completed migration PostgreSQL volume не найден."
   docker volume inspect "${COMPOSE_PROJECT_NAME}_redis_data" >/dev/null \
     || die "Completed migration Redis volume не найден."
@@ -2036,6 +2043,7 @@ adopt_completed_migration_runtime_identity() {
 save_state() {
   local pending_state_file="${RUNTIME_CHANGE_PENDING_STATE_FILE:-}"
   set_runtime_paths
+  postgres_storage_defaults || return 1
   if [[ -n "${pending_state_file}" ]]; then
     STATE_FILE="${pending_state_file}"
   fi
@@ -2090,6 +2098,8 @@ POSTGRES_DB=$(shell_quote "${POSTGRES_DB}")
 POSTGRES_USER=$(shell_quote "${POSTGRES_USER}")
 POSTGRES_PASSWORD=$(shell_quote "${POSTGRES_PASSWORD}")
 POSTGRES_IMAGE=$(shell_quote "${POSTGRES_IMAGE}")
+POSTGRES_MAJOR=$(shell_quote "${POSTGRES_MAJOR}")
+POSTGRES_VOLUME_NAME=$(shell_quote "${POSTGRES_VOLUME_NAME}")
 REDIS_URL=$(shell_quote "${REDIS_URL}")
 REDIS_IMAGE=$(shell_quote "${REDIS_IMAGE}")
 BOT_HTTP_PORT=$(shell_quote "${BOT_HTTP_PORT}")

@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - __POSTGRES_VOLUME_KEY__:__POSTGRES_MOUNT_PATH__
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U __POSTGRES_USER__ -d __POSTGRES_DB__"]
       interval: 30s
@@ -59,5 +59,5 @@ services:
       start_period: 30s
 
 volumes:
-  postgres_data:
+  __POSTGRES_VOLUME_KEY__:
   redis_data:

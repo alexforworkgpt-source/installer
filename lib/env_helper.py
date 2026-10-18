@@ -53,6 +53,8 @@ STATE_KEYS = [
     "POSTGRES_USER",
     "POSTGRES_PASSWORD",
     "POSTGRES_IMAGE",
+    "POSTGRES_MAJOR",
+    "POSTGRES_VOLUME_NAME",
     "REDIS_URL",
     "REDIS_IMAGE",
     "BOT_HTTP_PORT",
@@ -212,6 +214,22 @@ def cmd_restore_state(argv: list[str]) -> int:
     cabinet_url = bot.get("CABINET_URL", "")
 
     compose_project = compose_project_name(project_root)
+    postgres_image, postgres_major = "postgres:15-alpine", "15"
+    postgres_volume = f"{compose_project}_postgres_data"
+    redis_image = "redis:7-alpine"
+    if len(argv) >= 13:
+        compose_project, postgres_image, postgres_major, postgres_volume, redis_image = argv[8:13]
+        if not re.fullmatch(r"[a-z0-9][a-z0-9_-]*", compose_project):
+            raise ValueError("unsafe recovered Compose project")
+        expected = f"{compose_project}_postgres_data"
+        if postgres_major == "18":
+            expected = rf"{re.escape(compose_project)}_postgres18_data(?:-[a-z0-9]+)?"
+        elif postgres_major != "15":
+            raise ValueError("unsupported recovered PostgreSQL major")
+        if not re.fullmatch(expected, postgres_volume):
+            raise ValueError("unsafe recovered PostgreSQL volume")
+    elif (project_root / "state/docker-compose.yml").exists():
+        raise ValueError("existing Compose requires verified PostgreSQL runtime identity")
     state = {
         "PROJECT_ROOT": str(project_root),
         "REPOS_DIR": str(project_root / "repos"),
@@ -257,9 +275,11 @@ def cmd_restore_state(argv: list[str]) -> int:
         "POSTGRES_DB": bot.get("POSTGRES_DB", "remnawave_bot"),
         "POSTGRES_USER": bot.get("POSTGRES_USER", "remnawave_user"),
         "POSTGRES_PASSWORD": bot.get("POSTGRES_PASSWORD", ""),
-        "POSTGRES_IMAGE": "postgres:15-alpine",
+        "POSTGRES_IMAGE": postgres_image,
+        "POSTGRES_MAJOR": postgres_major,
+        "POSTGRES_VOLUME_NAME": postgres_volume,
         "REDIS_URL": bot.get("REDIS_URL", "redis://redis:6379/0"),
-        "REDIS_IMAGE": "redis:7-alpine",
+        "REDIS_IMAGE": redis_image,
         "BOT_HTTP_PORT": bot.get("WEB_API_PORT", "8080"),
         "BOT_RUN_MODE": bot.get("BOT_RUN_MODE", "webhook"),
         "WEB_API_ENABLED": bot.get("WEB_API_ENABLED", "true"),

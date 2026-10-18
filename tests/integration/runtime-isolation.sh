@@ -62,6 +62,7 @@ render_project() {
   local output_file="$2"
 
   PROJECT_ROOT="${project_root}"
+  unset POSTGRES_MAJOR POSTGRES_VOLUME_NAME
   reset_project_root_paths
   set_runtime_paths
   COMPOSE_PROJECT_NAME="$(compose_project_name_for_root "${PROJECT_ROOT}")"

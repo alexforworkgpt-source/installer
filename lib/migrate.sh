@@ -552,10 +552,11 @@ import_migration_archive() {
   fi
 
   compose_project="${COMPOSE_PROJECT_NAME}"
+  postgres_storage_defaults || die "Небезопасная PostgreSQL storage identity в пакете."
   if [[ -n "$(docker ps -aq --filter "label=com.docker.compose.project=${compose_project}")" ]]; then
     die "Compose project ${compose_project} уже существует. Импорт разрешен только на чистый target project."
   fi
-  for expected_volume in "${compose_project}_postgres_data" "${compose_project}_redis_data"; do
+  for expected_volume in "${POSTGRES_VOLUME_NAME}" "${compose_project}_redis_data"; do
     if docker volume inspect "${expected_volume}" >/dev/null 2>&1; then
       die "Docker volume ${expected_volume} уже существует. Удалите остатки предыдущей попытки через меню переноса."
     fi
@@ -584,7 +585,7 @@ EOF
 
   cat > "${resource_marker}" <<EOF
 compose_project=${compose_project}
-volume=${compose_project}_postgres_data
+volume=${POSTGRES_VOLUME_NAME}
 volume=${compose_project}_redis_data
 EOF
   secure_private_file "${resource_marker}"

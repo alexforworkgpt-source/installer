@@ -125,6 +125,8 @@ BOT_VERSION_REF="${PREPARED_BOT_SHA}"
 CABINET_REPO_URL="${PREPARED_CABINET_REPO_URL}"
 CABINET_VERSION_REF="${PREPARED_CABINET_SHA}"
 POSTGRES_IMAGE="${PREPARED_POSTGRES_IMAGE}"
+POSTGRES_MAJOR="$(postgres_image_major "${POSTGRES_IMAGE}")"
+unset POSTGRES_VOLUME_NAME
 REDIS_IMAGE="${PREPARED_REDIS_IMAGE}"
 CURRENT_RELEASE="${PREPARED_RELEASE}"
 CURRENT_RELEASE_BUNDLE_IDENTITY="${PREPARED_BUNDLE_IDENTITY}"
@@ -294,4 +296,5 @@ printf '%s\n' 'uninstall:stack-removed-management-preserved' \
   | tee -a "${DEFAULT_INSTALLER_HOME}/lifecycle-last.log"
 secure_private_file "${DEFAULT_INSTALLER_HOME}/lifecycle-last.log"
 
-log_info "Ubuntu 24.04 full lifecycle integration passed."
+# The project was just removed. log_info would recreate state/installer.log.
+printf '[INFO] %s\n' 'Ubuntu 24.04 full lifecycle integration passed.'

@@ -683,11 +683,18 @@ update_from_release_bundle_once() {
   protect_completed_migration_image_override "${work_dir}" \
     || die "Не удалось защитить completed migration image override. Runtime не изменён."
 
+  prepare_postgres_update_storage "${work_dir}" "${postgres_image}" \
+    || die "PostgreSQL image/storage preflight не прошёл. Runtime не изменён."
+
   echo "Release Bundle: ${release}"
   echo "Bot SHA:        ${bot_sha}"
   echo "Cabinet repo:   ${manifest_cabinet_repo}"
   echo "Cabinet SHA:    ${cabinet_sha}"
   echo "PostgreSQL:     ${postgres_image}"
+  if [[ "$(<"${work_dir}/previous-postgres-major")" != "$(<"${work_dir}/target-postgres-major")" ]]; then
+    echo "PostgreSQL 15 -> 18: отдельный новый volume, dump/restore и сверка таблиц/счётчиков до запуска Bot."
+    echo "Старый PostgreSQL 15 volume и защищённый dump сохраняются."
+  fi
   echo "Redis:          ${redis_image}"
   prompt_yes_no "Применить этот Release Bundle?" "n" || {
     log_info "Обновление Release Bundle отменено."

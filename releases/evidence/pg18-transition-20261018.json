@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "kind": "installer-postgresql-major-transition",
+  "result": "PASS",
+  "installer": {
+    "installer_sha": "f1f301b31b62e8f3234ea438596678ba03c2413a",
+    "installer_tree_sha": "fa3b27bf3b2dbc5d0e87114c74a9cd3f86291600",
+    "archive_sha256": "59594a9e99629299e7b83f5dc86f020593c52207ce6f28fa3debe45619c8c308"
+  },
+  "baseline": {
+    "bundle": "bundle-v2026.10.15.1",
+    "postgres_major": 15,
+    "revision": "0131"
+  },
+  "target": {
+    "postgres_major": 18,
+    "revision": "0131",
+    "postgres_image": "postgres@sha256:d8703cd7fba306b9fec9268ecedfa8a966846c053036a60e3635791957eb2f66"
+  },
+  "bot_sha": "5bda3c56f0afd9f4813e9c6fa48934948b05ebae",
+  "stages": [
+    "pg15-baseline:committed-schema0131",
+    "native-data:seeded-two-users-legacy-transaction",
+    "pg18-injected-failure:pg15-data-restored-verified",
+    "pg15-to-pg18:committed-schema0131-data-preserved"
+  ],
+  "native_exit_code": 0,
+  "verification": {
+    "table_count": 128,
+    "sequence_count": 122,
+    "both_manifests_equal": true,
+    "injected_failure_rollback_verified": true,
+    "fixture_checks_pass": true,
+    "upstream_source_files": 810,
+    "upstream_source_differences": 0,
+    "off_host_dump_and_archive_verified": true
+  },
+  "cleanup": {
+    "owned_resources_removed": true,
+    "host_baseline_restored": true,
+    "original_volumes_preserved": true,
+    "private_controls_preserved_off_host_and_removed": true
+  },
+  "log_path": "releases/evidence/pg18-transition-20261018.log",
+  "log_sha256": "9729515dedc1746bf6a84354e68d02252c84484c5a27f998b7cfed2f33369915"
+}

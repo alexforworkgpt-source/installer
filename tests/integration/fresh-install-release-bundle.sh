@@ -41,6 +41,7 @@ set_default_runtime_values() {
 install_base_packages() { printf '%s\n' packages >> "${ORDER_LOG}"; }
 install_docker_engine() { printf '%s\n' docker >> "${ORDER_LOG}"; }
 ensure_docker_compose_plugin() { printf '%s\n' compose-plugin >> "${ORDER_LOG}"; }
+postgres_image_major() { printf '%s' 18; }
 prepare_fresh_install_release() {
   printf '%s\n' release-preflight >> "${ORDER_LOG}"
   PREPARED_RELEASE="fresh-test"
@@ -61,6 +62,7 @@ configure_stack() {
   [[ "${CABINET_VERSION_REF}" == "${TARGET_CABINET_SHA}" ]]
   [[ "${CABINET_REPO_URL}" == "${TARGET_CABINET_REPOSITORY}" ]]
   [[ "${POSTGRES_IMAGE}" == *@sha256:* ]]
+  [[ "${POSTGRES_MAJOR}" == 18 ]]
   [[ "${REDIS_IMAGE}" == *@sha256:* ]]
   [[ -z "${CURRENT_RELEASE:-}" ]]
 }

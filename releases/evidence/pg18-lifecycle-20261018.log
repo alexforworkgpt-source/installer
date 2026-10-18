@@ -1,0 +1,35 @@
+Native PostgreSQL 18 lifecycle evidence — 2026-10-18
+Sanitized exact stage excerpts, not the complete private native log.
+Private full-log SHA256: 70b12c93ef3cbfb561c0af07fd39034aa2e64ec828834a9c62ce5f3508b3a939
+Exact Installer source: f1f301b31b62e8f3234ea438596678ba03c2413a
+Tree: fa3b27bf3b2dbc5d0e87114c74a9cd3f86291600
+Public source archive SHA256: 59594a9e99629299e7b83f5dc86f020593c52207ce6f28fa3debe45619c8c308
+Target: ubuntu-24.04 / linux/amd64; pinned official PG18.6 image.
+Native process exit code collected independently: 0.
+
+BEGIN EXACT NATIVE STAGE EXCERPTS
+fresh-install:committed
+non-root-runtime:verified
+repeat-install:committed
+settings-draft:committed
+legacy-migration:verified
+two-project-isolation:verified
+protected-update:committed
+protected-update-injected-failure:rolled-back-verified
+file-recovery-and-launcher:verified
+uninstall:stack-removed-management-preserved
+[INFO] Ubuntu 24.04 full lifecycle integration passed.
+END EXACT NATIVE STAGE EXCERPTS
+
+INDEPENDENT COLLECTOR VERIFICATION
+141 public source files compared: differences=0.
+All ten ordered stages matched; owned project/containers/volumes/clone absent.
+Original six offline volumes preserved.
+After both gates: exact owned remaining volumes and test image tags removed.
+Original management files and modes restored; Caddy/UFW/launcher/global locator unchanged.
+Original six volumes preserved; Docker/Caddy active.
+Both owned test control packets archived off-host, inventory/hash verified, then removed.
+First pre-fix lifecycle run was NOT accepted (cleanup guard exit97); its evidence was preserved separately.
+No production PG18 transfer or public Bundle smoke is claimed by this proof.
+Historical OPEN/BLOCKED and owner-accepted physical Telegram scope remain unchanged.
+Result: PASS within the scope stated above.
