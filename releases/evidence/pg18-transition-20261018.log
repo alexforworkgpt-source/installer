@@ -1,0 +1,31 @@
+Native PostgreSQL 18 transition evidence — 2026-10-18
+Sanitized exact stage excerpts, not the complete private native log.
+Private full-log SHA256: 5d812953f895760cf15077738e2f15e92c0f35c1f92ef42fd425b824b14f5094
+Exact Installer source: f1f301b31b62e8f3234ea438596678ba03c2413a
+Tree: fa3b27bf3b2dbc5d0e87114c74a9cd3f86291600
+Public source archive SHA256: 59594a9e99629299e7b83f5dc86f020593c52207ce6f28fa3debe45619c8c308
+Target: ubuntu-24.04 / linux/amd64; pinned official PG18.6 image.
+Native process exit code collected independently: 0.
+
+BEGIN EXACT NATIVE STAGE EXCERPTS
+pg15-baseline:committed-schema0131
+native-data:seeded-two-users-legacy-transaction
+pg18-injected-failure:pg15-data-restored-verified
+pg15-to-pg18:committed-schema0131-data-preserved
+END EXACT NATIVE STAGE EXCERPTS
+
+INDEPENDENT COLLECTOR VERIFICATION
+rolled-back: tables=128; sequences=122; manifests_equal=true; dump_checksum_verified=true.
+committed: tables=128; sequences=122; manifests_equal=true; dump_checksum_verified=true.
+Native schema0131 fixture: two users, balances 12345/23456 kopeks, one legacy transaction preserved through rollback and commit.
+No merchant payment; no Panel write; native fixture subscriptions=0.
+Runtime Upstream Bot source: 810 files compared to exact 5bda3c56f0afd9f4813e9c6fa48934948b05ebae; differences=0.
+Final PG18 dump and project archive copied off-host and SHA256 verified.
+After both gates: exact owned remaining volumes and test image tags removed.
+Original management files and modes restored; Caddy/UFW/launcher/global locator unchanged.
+Original six volumes preserved; Docker/Caddy active.
+Both owned test control packets archived off-host, inventory/hash verified, then removed.
+First pre-fix lifecycle run was NOT accepted (cleanup guard exit97); its evidence was preserved separately.
+No production PG18 transfer or public Bundle smoke is claimed by this proof.
+Historical OPEN/BLOCKED and owner-accepted physical Telegram scope remain unchanged.
+Result: PASS within the scope stated above.
