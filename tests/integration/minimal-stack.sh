@@ -296,4 +296,5 @@ printf '%s\n' 'uninstall:stack-removed-management-preserved' \
   | tee -a "${DEFAULT_INSTALLER_HOME}/lifecycle-last.log"
 secure_private_file "${DEFAULT_INSTALLER_HOME}/lifecycle-last.log"
 
-log_info "Ubuntu 24.04 full lifecycle integration passed."
+# The project was just removed. log_info would recreate state/installer.log.
+printf '[INFO] %s\n' 'Ubuntu 24.04 full lifecycle integration passed.'
