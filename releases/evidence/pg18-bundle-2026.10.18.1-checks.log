@@ -1,0 +1,39 @@
+PostgreSQL 18 Bundle publication gates — 2026-10-18
+Reviewed sanitized verification report; private raw logs and archives are not published.
+Bundle: bundle-v2026.10.18.1; immutable Release ID: 416313728.
+Installer: f1f301b31b62e8f3234ea438596678ba03c2413a; public archive SHA256: 59594a9e99629299e7b83f5dc86f020593c52207ce6f28fa3debe45619c8c308.
+Publication: https://github.com/alexforworkgpt-source/installer/actions/runs/39109429978 attempt 1; completed/success.
+Bundle identity: 05b7d0db4e82f0f85a42ac4615d7557e7b1b43bce8d85d8c5aa2d8fcf8cd7f0a.
+Public files independently downloaded without Authorization; all API digests, sizes and checksum sidecars matched.
+Installer public bytes match the exact native-tested source archive.
+Cabinet archive and builder/runtime provenance are byte-identical to stable bundle-v2026.10.15.1.
+Cabinet SHA cc17e371d2db45e8c498dc944923d3b8354892e9; artifact c1afff2cffa8a00a94d17a7818597c84e3c8e9d0be4d1718f8f8a8c2c86cbfc4.
+The previous final browser gate on these exact compiled bytes retains its selected scope; no frontend source or artifact changed.
+Upstream Bot 5bda3c56f0afd9f4813e9c6fa48934948b05ebae and Redis e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2 unchanged.
+Official PostgreSQL18.6 linux/amd64 digest d8703cd7fba306b9fec9268ecedfa8a966846c053036a60e3635791957eb2f66.
+New ten-stage lifecycle and separate schema0131 PG15-to-18/injected-rollback/retry gates: PASS, native exit0.
+Both transition attempts matched 128 tables and 122 sequences; two users/balances and legacy transaction preserved.
+Native runtime Upstream Bot source: 810 files, differences0. No backend patch.
+
+NEW PUBLIC BUNDLE SMOKE
+Exact public source verified: 141 files, differences0; installed only within a new owned scope on designated disposable Ubuntu24.04.
+Native process exit0; PostgreSQL18/schema0131/storage image and mount verified; Bot/Redis/PG healthy.
+All 285 installed Cabinet artifact files match the public archive; public Cabinet/instruction/branding routes200, health ok, hook root404, cache no-store.
+Owned project/containers/volumes/image tag removed; management/Caddy/UFW/launcher/global locator files and modes unchanged.
+Original six offline volumes preserved. Owned control archived off-host, inventory/hash verified, then removed.
+Private successful smoke log SHA256: d7d5249acaa75f8adcb216dc58c8d5897a7a9d24dff0ac0004704b0791410c19.
+Initial private smoke harness stopped before runtime mutation due to a retained previous test Compose name; corrected harness rerun is the accepted smoke.
+
+LIMITATIONS
+Selected installation/connection/artifact checks, not a full independent backend/payment/device acceptance suite.
+Physical Telegram/device SKIPPED_OWNER_ACCEPTED; historical OPEN/BLOCKED and non-blocking audit scope retained.
+No real merchant payment, business settings changes or Panel writes. Prior owner top-up/renewal confirmation is preserved.
+Production transfer is separately authorized in the same concrete plan and has NOT_STARTED at this publication gate.
+Existing Release assets/tags/latest/settings preserved; no existing assets replaced.
+Result: PASS within the stated scope.
+asset_sha256 cabinet-dist.tar.gz c1afff2cffa8a00a94d17a7818597c84e3c8e9d0be4d1718f8f8a8c2c86cbfc4
+asset_sha256 cabinet-dist.tar.gz.sha256 29439ab819ad2834060f88e0ee0e2f2d29dd46a63db428a29f9ecb39ef9f9820
+asset_sha256 installer-2026.10.18.1.tar.gz 59594a9e99629299e7b83f5dc86f020593c52207ce6f28fa3debe45619c8c308
+asset_sha256 installer-2026.10.18.1.tar.gz.sha256 da1bcc011ebd237ad8fe3fe0f44b1f89cf60a17a87b5f0c81252ad78bbab9a7f
+asset_sha256 release-provenance.json e57ed0d310acc7480de73eb4e04dda84282696cedcf78249d01533a24d57e941
+asset_sha256 release.json 5c125c2ffd83919117d3f7601de0f6b1c70073cdeb323a84c8e6139f12720867
