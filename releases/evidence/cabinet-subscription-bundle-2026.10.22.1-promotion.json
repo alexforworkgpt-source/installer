@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "kind": "bundle-promotion",
+  "result": "PASS",
+  "owner_approved": true,
+  "repository": "alexforworkgpt-source/installer",
+  "bundle_tag": "bundle-v2026.10.22.1",
+  "release_id": 421144931,
+  "installer_tag": "installer-v2026.10.18",
+  "installer": {
+    "installer_sha": "f1f301b31b62e8f3234ea438596678ba03c2413a",
+    "installer_tree_sha": "fa3b27bf3b2dbc5d0e87114c74a9cd3f86291600",
+    "archive_sha256": "59594a9e99629299e7b83f5dc86f020593c52207ce6f28fa3debe45619c8c308"
+  },
+  "cabinet_tag": "cabinet-v2026.10.22.1",
+  "protected": {
+    "bot_repository": "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",
+    "bot_sha": "5bda3c56f0afd9f4813e9c6fa48934948b05ebae",
+    "postgres_image": "postgres@sha256:d8703cd7fba306b9fec9268ecedfa8a966846c053036a60e3635791957eb2f66",
+    "redis_image": "redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2",
+    "backend_contract": "1",
+    "configuration_schema": 1,
+    "manifest_schema": 2,
+    "migration_policy": "rollback-compatible",
+    "target_os": "ubuntu-24.04",
+    "target_platform": "linux/amd64",
+    "bot_backend_contract": "1",
+    "cabinet_backend_contract": "1"
+  },
+  "bundle_identity": "517e663836e6e7fe5699e7b6f4f7f9253cd2275abefab524659b7e00f6fe9eca",
+  "assets": {
+    "cabinet-dist.tar.gz": "3b02860e5de08b1f7d6aae56777eeb1b4cb740dc6acfc8460fa449671fdbb8ed",
+    "cabinet-dist.tar.gz.sha256": "69eeb16971e00aa43e212aea4621ca70a8dd8e1778143e0a1c6e11ba4d598083",
+    "installer-2026.10.22.1.tar.gz": "59594a9e99629299e7b83f5dc86f020593c52207ce6f28fa3debe45619c8c308",
+    "installer-2026.10.22.1.tar.gz.sha256": "ae2c617b2149ef5a666b2af855f505ed147b7d7b946645452cb09e18c203f1c4",
+    "release-provenance.json": "7186aaad3b97ee33efdb1306a1f8a870ed790b46a772693bd2306637df227c21",
+    "release.json": "28322fe4cf8c0a50c6cab524bf3b0c7e2478a631908c634a7ece719c74b2edb9"
+  },
+  "publication": {
+    "workflow_sha": "f1f301b31b62e8f3234ea438596678ba03c2413a",
+    "run_id": 39844607445,
+    "run_attempt": 1
+  },
+  "previous": {
+    "manifest_url": "https://github.com/alexforworkgpt-source/installer/releases/download/bundle-v2026.10.18.1/release.json",
+    "manifest_sha256": "5c125c2ffd83919117d3f7601de0f6b1c70073cdeb323a84c8e6139f12720867",
+    "bundle_identity": "05b7d0db4e82f0f85a42ac4615d7557e7b1b43bce8d85d8c5aa2d8fcf8cd7f0a"
+  },
+  "gates": {
+    "cabinet_source": {
+      "result": "PASS",
+      "evidence_url": "https://github.com/alexforworkgpt-source/installer/blob/ee423729a23a4a644e8c74a949952d3d31a8ad40/releases/evidence/cabinet-subscription-bundle-2026.10.22.1-checks.log"
+    },
+    "compatibility": {
+      "result": "PASS",
+      "evidence_url": "https://github.com/alexforworkgpt-source/installer/blob/ee423729a23a4a644e8c74a949952d3d31a8ad40/releases/evidence/cabinet-subscription-bundle-2026.10.22.1-checks.log"
+    },
+    "smoke": {
+      "result": "PASS",
+      "evidence_url": "https://github.com/alexforworkgpt-source/installer/blob/ee423729a23a4a644e8c74a949952d3d31a8ad40/releases/evidence/cabinet-subscription-bundle-2026.10.22.1-checks.log"
+    },
+    "transition": {
+      "result": "NOT_REQUIRED",
+      "evidence_url": "https://github.com/alexforworkgpt-source/installer/blob/ee423729a23a4a644e8c74a949952d3d31a8ad40/releases/evidence/cabinet-subscription-bundle-2026.10.22.1-checks.log"
+    }
+  },
+  "limitations": [
+    {
+      "id": "physical-telegram-device",
+      "status": "BLOCKED",
+      "summary": "SKIPPED_OWNER_ACCEPTED for this current fixed2026.10.22.1 package after an explicit owner choice. Physical Telegram/Android/iOS navigation/session/device coverage is unverified, not PASS; BLOCKED is the record schema representation.",
+      "accepted": true
+    },
+    {
+      "id": "classic-auto-purchase",
+      "status": "OPEN",
+      "summary": "Existing unchanged Upstream Bot behavior: manual purchase confirmation after top-up remains an accepted limitation.",
+      "accepted": true
+    },
+    {
+      "id": "unused-legacy-email-wrapper",
+      "status": "OPEN",
+      "summary": "The unused createEmail wrapper is unchanged; current UI uses the supported combined endpoint.",
+      "accepted": true
+    },
+    {
+      "id": "live-scope",
+      "status": "BLOCKED",
+      "summary": "Full live response-field parity, untested provider/recurring/renewal/concurrency and Panel mutation scenarios are not claimed PASS. Dated evidence retains its own scope; no backend acceptance suite is part of this release task.",
+      "accepted": true
+    },
+    {
+      "id": "dependency-security-audit",
+      "status": "OPEN",
+      "summary": "Fresh exact-source non-blocking audit:15 findings (4 moderate,10 high,1 critical). CodeQL completed with baseline32/source31 existing open IDs and no new IDs. No dependency upgrade or reachability conclusion is claimed.",
+      "accepted": true
+    }
+  ],
+  "lifecycle": {
+    "commit": "b1e5a4a8b8c198ce0bbf7e5b30cb403c41bee977",
+    "path": "releases/evidence/lifecycle-pg18-f1f301b-20261018.json"
+  },
+  "make_latest": false,
+  "log_path": "releases/evidence/cabinet-subscription-bundle-2026.10.22.1-checks.log",
+  "log_sha256": "186658563f9b842c79760dbdc4f7a99fc6dd53928610ffb6066b1506d87f8c26"
+}
