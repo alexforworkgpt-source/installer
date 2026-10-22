@@ -1,0 +1,29 @@
+Custom Cabinet / Release Bundle2026.10.22.1 verified package
+result=PASS_WITH_EXPLICIT_SCOPE_LIMITATIONS
+Owner authorization: new package operations, subsequent regression fixes, public smoke/cleanup and metadata-only stable. Production/latest/settings changes excluded.
+Current physical Telegram/Android/iOS limitation explicitly accepted by owner: SKIPPED_OWNER_ACCEPTED, not PASS.
+Previous stable Bundle: bundle-v2026.10.18.1; manifest SHA256=5c125c2ffd83919117d3f7601de0f6b1c70073cdeb323a84c8e6139f12720867; identity=05b7d0db4e82f0f85a42ac4615d7557e7b1b43bce8d85d8c5aa2d8fcf8cd7f0a
+Installer source/tag: installer-v2026.10.18 / f1f301b31b62e8f3234ea438596678ba03c2413a; tree=fa3b27bf3b2dbc5d0e87114c74a9cd3f86291600; archive=59594a9e99629299e7b83f5dc86f020593c52207ce6f28fa3debe45619c8c308
+Cabinet source/tag: cabinet-v2026.10.22.1 / 80be79d59791c330dae3fc5eac46d96d2e503357; tree=e2ff9b87d26c8980b86f78750b8a967622866c12
+Unchanged Upstream Bot=5bda3c56f0afd9f4813e9c6fa48934948b05ebae; backend source/API/business logic/migrations unchanged.
+Source PR43 and record PR44 merged through protected main; no GitHub settings/bypass changes.
+Source CI=https://github.com/alexforworkgpt-source/custom-cabinet/actions/runs/39842860677: Node24/26 each1166 unit/182files; guards/lint/format/types/build PASS.
+CodeQL=https://github.com/alexforworkgpt-source/custom-cabinet/actions/runs/39842860583: completed, baseline32/source31 open IDs, new IDs0; existing alerts not claimed resolved.
+Audit=https://github.com/alexforworkgpt-source/custom-cabinet/actions/runs/39842860689: non-blocking15 (4moderate/10high/1critical), unchanged lockfile; no reachability claim.
+Cabinet exact publication=https://github.com/alexforworkgpt-source/custom-cabinet/actions/runs/39845015620: PASS.
+Bundle exact publication=https://github.com/alexforworkgpt-source/installer/actions/runs/39844607445: PASS;143 release-contract tests, protected identities and two matching Cabinet archives.
+Independent builds=PASS: local linux/amd64 --no-cache plus actual dependency install/2999-module compilation in the first GitHub build; second workflow build may be cached.
+Public downloads=PASS: all8 project/Bundle files without Authorization; exact sets/sizes/SHA256/source/tag/tree/manifest/provenance/checksums/archive safety.
+Cabinet archive SHA256=3b02860e5de08b1f7d6aae56777eeb1b4cb740dc6acfc8460fa449671fdbb8ed; independent local/public bytes identical;287 files (Vite286 plus the pinned Nginx default50x.html).
+Bundle identity=517e663836e6e7fe5699e7b6f4f7f9253cd2275abefab524659b7e00f6fe9eca
+Final exact-archive browser=1766PASS/35configuredSKIP/0FAIL/0flaky;1801 cases, five widths320/375/768/1024/1280; pinned Chromium153, fallback fonts,2workers,0retries.
+Tagged source/artifact original bytes preserved before/after gate.62 verification input files hash-bound; only one geometry sampling block differs in the owned test copy: five separate protocol measurements become one atomic DOMRect sample. All assertions/API fixtures/timeouts/retries unchanged. Sampling diff SHA256=9cd09483e9d29240e897d57d1d5ea10408b9f11d20e717222e5196db7a11b81c.
+Earlier direct-Vite1741/35/5 and exact-archive1765/35/1 runs are retained as NOT_PASS; the latter saw0.111px same-row animation frame skew. Atomic diagnostic16PASS preceded the complete final1766/35/0 run. Obsolete earlier-source run stopped in verified owned process tree, not claimed PASS.
+Trusted lifecycle reused=b1e5a4a8b8c198ce0bbf7e5b30cb403c41bee977:releases/evidence/lifecycle-pg18-f1f301b-20261018.json; exact Installer/tree/archive, Bot, PG/Redis digests, contracts, Ubuntu24.04/linux-amd64 unchanged.
+Previous-to-candidate transition=NOT_REQUIRED: unchanged protected tuple; Cabinet-only change. No repeated full lifecycle/backend acceptance suite.
+New public Bundle targeted install/smoke=PASS/exit0: exact141 Installer source files, Bot/Cabinet identities, PostgreSQL18/schema0131,287 installed public artifact file hashes;3 services, health, frontend/instructions/API, webhook root404 and no-store.
+Cleanup/postflight=PASS: only fresh unique owned roots/Compose resources; original volumes and management/Caddy/UFW/launcher/locator file bytes/modes preserved. Owned root/control/image tag removed after off-host private archive checksum/inventory verification.
+Progress helper originally counted direct-Vite286 rather than public Docker287; counter corrected against the unchanged public archive. Native installed-vs-archive file-map assertion and successful install exit remained authoritative; installation not repeated.
+No agent financial operations, production connection/update or business-setting mutations. Outstanding initial Remnawave sync marker is historical setup scope, not a new backend todo or full-sync PASS.
+Cabinet metadata-only stable=PASS, source/tag/notes/assets/latest preserved. Bundle stable requires separate guarded promotion after this evidence is merged.
+Historical OPEN/BLOCKED and current unverified live provider/Telegram/payment/renewal/concurrency/Panel scenarios retained as accepted limitations, not PASS. BSCHEKER/Simple/Lite excluded.
