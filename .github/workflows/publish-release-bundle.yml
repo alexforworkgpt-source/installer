@@ -152,6 +152,7 @@ jobs:
 
       - name: Build deterministic Cabinet artifact
         env:
+          BOT_SHA: ${{ steps.revisions.outputs.bot_sha }}
           CABINET_SHA: ${{ steps.revisions.outputs.cabinet_sha }}
         shell: bash
         run: |
