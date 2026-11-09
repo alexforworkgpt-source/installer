@@ -13,6 +13,11 @@ archive_path="$3"
 installer_root="$4"
 node_builder_image="$5"
 nginx_runtime_image="$6"
+bot_sha="${BOT_SHA:-}"
+if [[ -n "${bot_sha}" && ! "${bot_sha}" =~ ^[a-f0-9]{40}$ ]]; then
+  printf '%s\n' 'BOT_SHA must be an exact 40-character lowercase Git SHA' >&2
+  exit 2
+fi
 work_dir="$(mktemp -d)"
 source_dir="${work_dir}/cabinet"
 dist_dir="${work_dir}/dist"
@@ -42,6 +47,7 @@ python3 "${installer_root}/scripts/release_bundle_publication.py" \
 # Git Bash would otherwise rewrite the frontend URL `/api` as a Windows path.
 MSYS2_ARG_CONV_EXCL='VITE_API_URL=' docker build \
   --file "${work_dir}/Dockerfile.pinned" \
+  --build-arg "VITE_UPSTREAM_BOT_SHA=${bot_sha}" \
   --build-arg VITE_API_URL=/api \
   --build-arg VITE_TELEGRAM_BOT_USERNAME= \
   --build-arg VITE_APP_NAME=Cabinet \
