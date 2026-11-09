@@ -1,0 +1,10 @@
+2026-11-09. Disposable Ubuntu 24.04, linux/amd64. Installer 30cc0f3ced7c10d223d0be2fe70c515ab9b2c691.
+Baseline public Bundle: bundle-v2026.10.22.1. Candidate: Bot 0fb7453a1f606c51e4ad92fa155436eb06e04081; Cabinet 8244ab830add751ef51ba8b5943eed3691bd197f; Cabinet archive SHA256 4c57b257130c90142f2e62ee9e56f928168ea03e3c3d5f6723e73b97fb836580.
+fresh-install:committed
+TRANSITION_PROOF={"mode": "seed", "revision": "0131", "users_preserved": 2, "balances_kopeks": [12345, 23456], "legacy_transaction_preserved": true, "subscriptions": 0, "panel_write_calls": 0, "data_origin": "isolated native ORM fixture; no actual merchant payment"}
+transition-baseline:committed-schema0131
+TRANSITION_PROOF={"mode": "verify", "revision": "0131", "users_preserved": 2, "balances_kopeks": [12345, 23456], "legacy_transaction_preserved": true, "subscriptions": 0, "panel_write_calls": 0, "data_origin": "isolated native ORM fixture; no actual merchant payment"}
+transition-injected-failure:rolled-back-schema0131-data-preserved
+TRANSITION_PROOF={"mode": "verify", "revision": "0140", "users_preserved": 2, "balances_kopeks": [12345, 23456], "legacy_transaction_preserved": true, "subscriptions": 0, "panel_write_calls": 0, "data_origin": "isolated native ORM fixture; no actual merchant payment"}
+transition:committed-schema0140-data-preserved
+Cross-version Installer transition and cleanup passed.

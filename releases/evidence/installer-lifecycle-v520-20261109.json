@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "kind": "installer-lifecycle",
+  "result": "PASS",
+  "installer": {
+    "archive_sha256": "aef117aa364e62933a3e0bb926c5811c5922e1af6871bf4dc213ebd35da2cd2d",
+    "installer_sha": "30cc0f3ced7c10d223d0be2fe70c515ab9b2c691",
+    "installer_tree_sha": "e116fea7b64c3a5e652ae13a00b3dbf484cf4e1f"
+  },
+  "protected": {
+    "bot_repository": "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",
+    "bot_sha": "0fb7453a1f606c51e4ad92fa155436eb06e04081",
+    "postgres_image": "postgres@sha256:d8703cd7fba306b9fec9268ecedfa8a966846c053036a60e3635791957eb2f66",
+    "redis_image": "redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2",
+    "backend_contract": "1",
+    "configuration_schema": 1,
+    "manifest_schema": 2,
+    "migration_policy": "rollback-compatible",
+    "target_os": "ubuntu-24.04",
+    "target_platform": "linux/amd64",
+    "bot_backend_contract": "1",
+    "cabinet_backend_contract": "1"
+  },
+  "evidence_url": "https://github.com/alexforworkgpt-source/installer/blob/10670bdedcafdeee29b0b347f9f3b199266fa51d/releases/evidence/installer-lifecycle-v520-20261109.log",
+  "log_path": "releases/evidence/installer-lifecycle-v520-20261109.log",
+  "log_sha256": "37a6ed25284cc7b42c952314b234c06a41b9e1a59eda11ac426da040dcb2263d"
+}
