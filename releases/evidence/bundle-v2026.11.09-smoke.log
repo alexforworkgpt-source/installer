@@ -1,0 +1,18 @@
+2026-11-09. Exact immutable public Bundle v2026.11.09, publication run 42586003223.
+4c57b257130c90142f2e62ee9e56f928168ea03e3c3d5f6723e73b97fb836580  cabinet-dist.tar.gz
+b1e109c493c606f321f0d57855de9316007f7340b889dc46bedb13deef0142c4  cabinet-dist.tar.gz.sha256
+aef117aa364e62933a3e0bb926c5811c5922e1af6871bf4dc213ebd35da2cd2d  installer-2026.11.09.tar.gz
+90815fd246cb983334397f9d411aae974ea4ee70fef46573b79a18e8924fc7a6  installer-2026.11.09.tar.gz.sha256
+24de3420a201d45b16bc0d2c74308101ead5cf6560d72817aec0cc6f1e2614e3  release.json
+623d08d1d519dad69af3f2a833a49fd7b24dd2f6adc2512de0436f6903e0778b  release-provenance.json
+{"identity":"6e935f777fe6e378f745529802c80db43689931956c94d579b135659a57e9397","release":"2026.11.09","bot":"0fb7453a1f606c51e4ad92fa155436eb06e04081","cabinet":"8244ab830add751ef51ba8b5943eed3691bd197f"}
+fresh-install:committed
+HTTPS / 200
+HTTPS /login 200
+HTTPS /health/unified 200
+HTTPS /api/cabinet/branding 200
+PUBLIC_SMOKE_READY asset_count=291
+Exact public Bundle smoke and cleanup passed.
+cleanup project=absent caddy=absent env=absent containers=0 volumes=0
+Remote integration cleanup verified.
+{"root":200,"branding":200,"health":200,"path":"/login","pageErrors":0}
