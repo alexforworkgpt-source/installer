@@ -1,0 +1,21 @@
+Installer lifecycle on designated disposable Ubuntu 24.04 / linux-amd64
+Installer source 30cc0f3ced7c10d223d0be2fe70c515ab9b2c691
+Installer archive aef117aa364e62933a3e0bb926c5811c5922e1af6871bf4dc213ebd35da2cd2d
+Upstream Bot 64beb370e6d69b23d3b651f91033f3b72e9e1f56
+Custom Cabinet ac6babd19aa67d541f325038bb44d383a79d8705
+Cabinet compiled archive 61ee34028df35fb37aec1de1766cd386abef3135ed687e625ecb755c93ea50cb
+Canonical PostgreSQL 18.6 and Redis images from previous Release Bundle.
+Exact Installer runtime used a locally served manifest and the checksum-verified compiled artifact.
+Both scoped test endpoints used temporary public DNS names with valid TLS.
+Installer ran with standard umask 022. Earlier diagnostic attempts on the stale DNS and with the private supervisor umask are excluded.
+fresh-install:committed
+non-root-runtime:verified
+repeat-install:committed
+settings-draft:committed
+legacy-migration:verified
+two-project-isolation:verified
+protected-update:committed
+protected-update-injected-failure:rolled-back-verified
+file-recovery-and-launcher:verified
+uninstall:stack-removed-management-preserved
+Lifecycle exit code: 0
