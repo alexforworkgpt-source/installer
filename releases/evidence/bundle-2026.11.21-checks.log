@@ -1,0 +1,17 @@
+Release Bundle 2026.11.21 — public verification
+Published with Installer workflow run 44827587473, attempt 1.
+Six public assets downloaded anonymously. Sizes, checksums, manifest, provenance and archive safety verified.
+Published Cabinet bytes equal both independent Linux rebuilds at SHA-256 61ee34028df35fb37aec1de1766cd386abef3135ed687e625ecb755c93ea50cb.
+Exact Cabinet source run 44824792644 succeeded. Local unit 1817 passed; compiled browser 183 passed, 3 configured skips.
+Protected stack transition and smoke ran on the designated Ubuntu 24.04 test host with temporary public DNS and normal TLS.
+Baseline is the published bundle-v2026.11.09. The rollback and commit both selected the newly published bundle-v2026.11.21.
+fresh-install:committed
+transition:baseline-0140-and-published-cabinet
+transition:two-synthetic-users-and-subscriptions
+transition:injected-failure-rolled-back-to-0140
+transition:committed-0143-data-preserved
+fresh-install:committed
+smoke:exact-291-files-and-public-assets
+smoke:published-bundle-verified
+Both runs ended with exit 0. Owned test projects and control files were removed; test bot webhook cleared.
+Physical Telegram, real provider operations and production deployment are outside this evidence scope.
