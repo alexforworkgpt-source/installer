@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "kind": "bundle-promotion",
+  "result": "PASS",
+  "owner_approved": true,
+  "repository": "alexforworkgpt-source/installer",
+  "bundle_tag": "bundle-v2026.11.21",
+  "release_id": 453234119,
+  "installer_tag": "installer-v2026.11.09",
+  "installer": {
+    "installer_sha": "30cc0f3ced7c10d223d0be2fe70c515ab9b2c691",
+    "installer_tree_sha": "e116fea7b64c3a5e652ae13a00b3dbf484cf4e1f",
+    "archive_sha256": "aef117aa364e62933a3e0bb926c5811c5922e1af6871bf4dc213ebd35da2cd2d"
+  },
+  "cabinet_tag": "cabinet-v2026.11.21",
+  "protected": {
+    "bot_repository": "https://github.com/BEDOLAGA-DEV/remnawave-bedolaga-telegram-bot.git",
+    "bot_sha": "64beb370e6d69b23d3b651f91033f3b72e9e1f56",
+    "postgres_image": "postgres@sha256:d8703cd7fba306b9fec9268ecedfa8a966846c053036a60e3635791957eb2f66",
+    "redis_image": "redis@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2",
+    "backend_contract": "1",
+    "configuration_schema": 1,
+    "manifest_schema": 2,
+    "migration_policy": "rollback-compatible",
+    "target_os": "ubuntu-24.04",
+    "target_platform": "linux/amd64",
+    "bot_backend_contract": "1",
+    "cabinet_backend_contract": "1"
+  },
+  "bundle_identity": "5db0906a05905b07d71d0d4d7a582d2ca321b7dc2f96f0960249291c7236d234",
+  "assets": {
+    "cabinet-dist.tar.gz": "61ee34028df35fb37aec1de1766cd386abef3135ed687e625ecb755c93ea50cb",
+    "cabinet-dist.tar.gz.sha256": "62ae507b189f41b9fb285b46d712dda64ce2d892a29b4698622fb741bdf06999",
+    "installer-2026.11.21.tar.gz": "aef117aa364e62933a3e0bb926c5811c5922e1af6871bf4dc213ebd35da2cd2d",
+    "installer-2026.11.21.tar.gz.sha256": "7db0e0249ae5da6f3525307c4dfd4ccf814e788d681a37f3a8a0bdca48d5120d",
+    "release-provenance.json": "b479da4933236909a07a6db0ca79f02dec63683d50b233e6043925bdf05ceb96",
+    "release.json": "5dda4585fac79b044ba3485c248e347f8670799ae58be277b350064b98eec97c"
+  },
+  "publication": {
+    "workflow_sha": "30cc0f3ced7c10d223d0be2fe70c515ab9b2c691",
+    "run_id": 44827587473,
+    "run_attempt": 1
+  },
+  "previous": {
+    "manifest_url": "https://github.com/alexforworkgpt-source/installer/releases/download/bundle-v2026.11.09/release.json",
+    "manifest_sha256": "24de3420a201d45b16bc0d2c74308101ead5cf6560d72817aec0cc6f1e2614e3",
+    "bundle_identity": "6e935f777fe6e378f745529802c80db43689931956c94d579b135659a57e9397"
+  },
+  "gates": {
+    "cabinet_source": {
+      "result": "PASS",
+      "evidence_url": "https://github.com/alexforworkgpt-source/custom-cabinet/actions/runs/44824792644"
+    },
+    "compatibility": {
+      "result": "PASS",
+      "evidence_url": "https://github.com/alexforworkgpt-source/installer/blob/8ec320704ffbd2733be7c382c4c36026aa30f524/releases/evidence/bundle-2026.11.21-checks.log"
+    },
+    "smoke": {
+      "result": "PASS",
+      "evidence_url": "https://github.com/alexforworkgpt-source/installer/blob/8ec320704ffbd2733be7c382c4c36026aa30f524/releases/evidence/bundle-2026.11.21-checks.log"
+    },
+    "transition": {
+      "result": "PASS",
+      "evidence_url": "https://github.com/alexforworkgpt-source/installer/blob/8ec320704ffbd2733be7c382c4c36026aa30f524/releases/evidence/bundle-2026.11.21-checks.log"
+    }
+  },
+  "limitations": [
+    {
+      "id": "classic-auto-purchase",
+      "status": "OPEN",
+      "summary": "Classic purchase still requires manual confirmation after balance top-up.",
+      "accepted": true
+    },
+    {
+      "id": "physical-telegram-device",
+      "status": "BLOCKED",
+      "summary": "Physical Telegram Mini App and native client coverage is unverified for this release.",
+      "accepted": true
+    },
+    {
+      "id": "live-provider-coverage",
+      "status": "BLOCKED",
+      "summary": "External panel app configuration and merchant sandbox checkout/recurring flows were not part of the verified browser scope.",
+      "accepted": true
+    },
+    {
+      "id": "unused-legacy-email-wrapper",
+      "status": "OPEN",
+      "summary": "The unused createEmail wrapper is unchanged; current UI uses the supported combined endpoint.",
+      "accepted": true
+    }
+  ],
+  "lifecycle": {
+    "commit": "c71f467769fe4147a5747e59d5067236ff692101",
+    "path": "releases/evidence/lifecycle-bot-v530-20261121.json"
+  },
+  "make_latest": false,
+  "log_path": "releases/evidence/bundle-2026.11.21-checks.log",
+  "log_sha256": "f97ad644c6cdcbfc756b39167c1fff4350530e6b3f1b9bcf3a40497c16b9327d"
+}
