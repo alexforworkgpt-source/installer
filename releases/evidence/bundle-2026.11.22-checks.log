@@ -1,0 +1,22 @@
+Release Bundle 2026.11.22 — public verification
+Publication workflow 44975182353, attempt 1. Installer contract suite and runtime digest checks passed.
+Candidate Release ID 454137392. Six public assets downloaded anonymously and verified by size, SHA-256, manifest, provenance and archive safety.
+Manifest SHA-256 81cbe6d309ca2893ab105f2b0358a32f15ac44292a4320f7b1fd0baaaac23525.
+Bundle identity 6a8008cc375026fffe58b21ee4b85569a73dc59a07bea303a4248a01b064771c.
+Cabinet e72fe0749790dd3e48ca09340a98d8b9490a9179; tree 2181646c86807433d46fb6dcc9900e1a3cfea056.
+Public Cabinet archive SHA-256 39ec91175997213ff3cb73c8ee7b7017fe24bf1dbc5f651a55c02dc8edacbe24.
+The archive matched an independent uncached build with the same pinned images, inputs and platform. The first Actions build ran dependency installation and compilation; the second reused Docker cache.
+Exact Cabinet publication run 44975085323 passed Node 24/26, lint, types, build and CodeQL. Audit run 44975083526 reported zero npm vulnerabilities. CodeQL showed no new alerts.
+Local build and 1822 unit tests passed. The exact compiled archive passed 243 browser checks with synthetic API responses. One viewport-specific check was skipped on desktop.
+Installer lifecycle reuse verified against the previous stable Bundle: identical Installer archive/source, Upstream Bot, image digests, OS and protected contracts. Transition: NOT_REQUIRED.
+
+Targeted smoke: PASS
+The dedicated disposable Ubuntu 24.04 x86_64 host selected the public 2026.11.22 manifest. The previous test stack was stopped with data retained. Installation used a separate test project.
+fresh-install:committed
+smoke:exact-291-files-and-public-assets
+smoke:normal-tls-branding-and-webhook-health
+smoke:published-bundle-verified
+Supervisor exit code: 0. Installed identity and artifact hash matched the reviewed values. Alembic revision 0143. Bot, PostgreSQL and Redis all healthy. Caddy active.
+Cleanup: NOT_RUN_OWNER_OS_REINSTALL
+The owner requested leaving the healthy test installation running until OS reinstall.
+Known physical Telegram and live payment / external provider coverage limits remain as recorded. Production was outside the test.
