@@ -1,0 +1,23 @@
+Cabinet-only Release Bundle 2026.11.26 on disposable Ubuntu 24.04 amd64
+Previous stable Bundle: bundle-v2026.11.22
+Installer lifecycle reuse: PASS with the same source, archive and protected stack
+Installer source 30cc0f3ced7c10d223d0be2fe70c515ab9b2c691
+Upstream Bot 64beb370e6d69b23d3b651f91033f3b72e9e1f56
+Custom Cabinet source b072a1e35cd3d025d4582968b0514ea2bc207b3d
+Cabinet tree 717f2c68caef1b73191f0bea1074fe7c90ef57a2
+Bundle identity 39da0ab50326f027219a38b1dfc9fa4e911b9b7666f20f87df2af31545810be2
+Cabinet archive SHA-256 4e2125883afa289f92a0c3af9de171bf8ce8c361bd25bf6a4d0e769ccd2c0e0d
+Manifest SHA-256 61ce63b75ca0c808fa90fe7c0900b4f7c3bf621858284820742226a86104b8c6
+Cabinet exact-source workflow: PASS https://github.com/alexforworkgpt-source/custom-cabinet/actions/runs/45801802102
+Bundle publication workflow: PASS https://github.com/alexforworkgpt-source/installer/actions/runs/45801915718
+Local Linux source tests: 1823 passed
+Uncached local and fresh Actions compilation: byte-identical Cabinet archive
+Exact compiled artifact in Chromium at 375 and 1280px: 160 checks passed
+Anonymously downloaded assets: exact sets, sizes, hashes and archive bindings verified
+Targeted smoke: PASS
+Fresh public Bundle installation committed. Installer diagnostics and healthy runtime verified.
+All 295 Cabinet files and the public HTML/initial assets matched the archive.
+TLS, Cabinet branding, unified health and webhook endpoint verified.
+Cleanup: PASS with isolated project, containers, volumes, networks and webhook removed
+Transition: NOT_REQUIRED with unchanged protected tuple
+Previously accepted live limitations and the pre-existing delayed daily-tariff action remain open.
