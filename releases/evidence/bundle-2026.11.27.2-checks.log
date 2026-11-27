@@ -1,0 +1,24 @@
+Cabinet-only Release Bundle 2026.11.27.2 on disposable Ubuntu 24.04 amd64.
+Previous stable Bundle: bundle-v2026.11.27.1.
+Installer lifecycle reuse: PASS with identical Installer, archive, protected stack and target OS.
+Installer source 30cc0f3ced7c10d223d0be2fe70c515ab9b2c691
+Upstream Bot 64beb370e6d69b23d3b651f91033f3b72e9e1f56
+Custom Cabinet source b5063386fd73ce2187a3e27726f2ddb400d5e133
+Custom Cabinet tree cf1e91ad17acd447844c6cc02d1bb349b9c1b407
+Bundle identity 4e2a504e2c5d55882d4fbbfba3c5d26def38d738180630c0ca5e831ee32b70fd
+Cabinet archive SHA-256 40cce1d63c2e4425e1335aedadf7a3d3a21caa3cddf9992e60d335edf3fb2a0e
+Manifest SHA-256 18739f5106adf3fe51c936f807249576aacb53adab60dcb6b133ae3e3ef04ca4
+Cabinet exact-source CI and CodeQL: PASS https://github.com/alexforworkgpt-source/custom-cabinet/actions/runs/46063217101 (attempt 1).
+Bundle publication and repeated archive verification: PASS https://github.com/alexforworkgpt-source/installer/actions/runs/46063977529 (attempt 1).
+Local exact Linux source: 1812 tests, lint, format, full type-check and build PASS.
+Uncached local and fresh Actions compilation: npm ci and Vite both executed and the archives were byte-identical.
+Exact compiled Chromium: 180 checks passed on mobile and desktop.
+The active unlimited Dashboard and Subscription geometry passed frame-by-frame checks at 375 CSS px with separate API response delays and both relevant arrival orders.
+The subscription at 320 CSS px and 200% text passed horizontal overflow and text readability checks.
+Anonymous public assets: exact sets, sizes, hashes, archive safety, and manifest bindings verified.
+CodeQL: 31 existing open alerts and no new alerts. Fresh npm audit detected no high or critical advisory output.
+Targeted smoke: PASS. Fresh installation from the public Bundle committed and all 312 Cabinet files matched the verified archive.
+TLS, Cabinet branding, unified health and webhook endpoint verified.
+Cleanup: PASS. Isolated project, containers, volumes, network, Caddy snippet and test webhook removed.
+Transition: NOT_REQUIRED with unchanged protected tuple.
+Previously accepted physical Telegram Mini App and external payment limitations remain open.
